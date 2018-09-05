@@ -16,6 +16,7 @@
     <Compile Include="CatchTest.fs" />
     <Compile Include="GroupByTest.fs" />
     <Compile Include="BindTest.fs" />
+    <Compile Include="TakeUntilTest.fs" />
     <Compile Include="QueryTest.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>

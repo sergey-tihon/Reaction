@@ -12,7 +12,8 @@ module Filter =
                         match n with
                         | OnNext x ->
                             // Let exceptions bubble to the top
-                            match! chooser x with
+                            let! result = chooser x
+                            match result with
                             | Some b ->
                                 do! OnNext b |> obvAsync
                             | None -> ()
@@ -20,14 +21,15 @@ module Filter =
                         | OnCompleted -> do! OnCompleted |> obvAsync
 
                     }
-                return! _obv |>source
+                return! source _obv
             }
         subscribe
 
     // The classic filter (where) operator with an async predicate
     let filterAsync (predicate : 'a -> Async<bool>) (source : AsyncObservable<'a>) : AsyncObservable<'a> =
         let predicate' a = async {
-            match! predicate a with
+            let! result = predicate a
+            match result with
             | true -> return Some a
             | _ -> return None
         }
@@ -73,17 +75,18 @@ module Filter =
             let safeObv = safeObserver obvAsync
 
             async {
-                let _obv n =
+                let _obv (n : Notification<'b>) =
                     async {
                         match n with
-                        | OnCompleted -> do! OnCompleted |> safeObv
+                        | OnNext x ->
+                            do! OnCompleted |> safeObv
                         | OnError ex -> do! OnError ex |> safeObv
-                        | _ -> ()
+                        | OnCompleted -> ()
                     }
 
-                let! sub1 = source safeObv
                 let! sub2 = other _obv
+                let! sub1 = source safeObv
 
-                return compositeDisposable [sub1; sub2 ]
+                return compositeDisposable [ sub1; sub2 ]
             }
         subscribe

@@ -68,3 +68,22 @@ module Filter =
             }
         subscribe
 
+    let takeUntil (other: AsyncObservable<'b>) (source : AsyncObservable<'a>) : AsyncObservable<'a> =
+        let subscribe (obvAsync : Types.AsyncObserver<'a>) =
+            let safeObv = safeObserver obvAsync
+
+            async {
+                let _obv n =
+                    async {
+                        match n with
+                        | OnCompleted -> do! OnCompleted |> safeObv
+                        | OnError ex -> do! OnError ex |> safeObv
+                        | _ -> ()
+                    }
+
+                let! sub1 = source safeObv
+                let! sub2 = other _obv
+
+                return compositeDisposable [sub1; sub2 ]
+            }
+        subscribe

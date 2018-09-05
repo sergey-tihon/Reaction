@@ -308,3 +308,9 @@ module AsyncObservable =
         |> AsyncObservable
         |> map AsyncObservable
 
+    /// Returns the values from the source observable sequence until the
+    /// other observable sequence produces a value.
+    let takeUntil (other: AsyncObservable<'b>) (source : AsyncObservable<'a>) : AsyncObservable<'a> =
+        AsyncObservable.Unwrap source
+        |> Filter.takeUntil (AsyncObservable.Unwrap other)
+        |> AsyncObservable

@@ -90,3 +90,4 @@ currently no plans to make this into a full featured Rx implementation.
 - **zipSeq** : seq<'b> -> AsyncObservable<'a> -> AsyncObservable<'a*'b>
 - **choose** : ('a -> 'b option) -> AsyncObservable<'a> -> AsyncObservable<'b>
 - **chooseAsync** : ('a -> Async<'b option>) -> AsyncObservable<'a> -> AsyncObservable<'b>
+- **takeUntil** : AsyncObservable<'b> -> AsyncObservable<'a> -> AsyncObservable<'a>

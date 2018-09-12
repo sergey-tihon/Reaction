@@ -7,7 +7,7 @@ open Types
 
 module Creation =
     // Create async observable from async worker function
-    let ofAsync (worker : AsyncObserver<'a> -> CancellationToken -> Async<unit>) : AsyncObservable<_> =
+    let ofAsync (worker: AsyncObserver<'a> -> CancellationToken -> Async<unit>) : AsyncObservable<_> =
         let subscribe (aobv : AsyncObserver<_>) : Async<AsyncDisposable> =
             let cancel, token = Core.canceller ()
             let obv = Core.safeObserver aobv
@@ -30,7 +30,7 @@ module Creation =
             do! OnError exn |> obv
         })
 
-    let ofSeq (xs : seq<'a>) : AsyncObservable<'a> =
+    let ofSeq (xs: seq<'a>) : AsyncObservable<'a> =
         ofAsync (fun obv token -> async {
             for x in xs do
                 if token.IsCancellationRequested then
@@ -47,8 +47,18 @@ module Creation =
     let inline single (x : 'a) : AsyncObservable<'a> =
         ofSeq [ x ]
 
-    // Create an async observable from a subscribe function. So trivial
-    // we should remove it once we get used to the idea that subscribe is
-    // exactly the same as an async observable.
-    let create (subscribe : AsyncObserver<_> -> Async<AsyncDisposable>) : AsyncObservable<_> =
+    let defer (factory: unit -> AsyncObservable<'a>) : AsyncObservable<'a> =
+
+        let subscribe  (aobv : AsyncObserver<'a>) : Async<AsyncDisposable> =
+            async {
+                let result =
+                    try
+                        factory ()
+                    with
+                    | ex ->
+                        fail ex
+
+                return! result aobv
+
+            }
         subscribe

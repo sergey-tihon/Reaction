@@ -14,17 +14,18 @@ module AsyncObservable =
             return AsyncDisposable disposable
         }
 
+        /// Subscribes the async observer function (`Notification{'a} -> Async{unit}`)
+        /// to the AsyncObservable
+        member this.SubscribeAsync<'a> (obv: Notification<'a> -> Async<unit>) = async{
+            let! disposable = obv |> AsyncObservable.Unwrap this
+            return AsyncDisposable disposable
+        }
+
         /// Subscribes the async observer to the async observable,
         /// ignores the disposable
         member this.RunAsync obv = async {
             let! _ = AsyncObserver.Unwrap obv |> AsyncObservable.Unwrap this
             return ()
-        }
-
-        /// Subscribes the observer function (`Notification{'a} -> Async{unit}`) to the AsyncObservable
-        member this.SubscribeAsync<'a> (obv: Notification<'a> -> Async<unit>) = async{
-            let! disposable = obv |> AsyncObservable.Unwrap this
-            return AsyncDisposable disposable
         }
 
         /// Subscribes the observer function (`Notification{'a} -> Async{unit}`)
@@ -52,23 +53,35 @@ module AsyncObservable =
             |> Combine.mergeInner
             |> AsyncObservable
 
-    let mapperUnwrapped (mapper : 'a -> AsyncObservable<'b>) a : Types.AsyncObservable<'b> =
+    let private mapperUnwrapped (mapper: 'a -> AsyncObservable<'b>) a : Types.AsyncObservable<'b> =
         let result = mapper a
         AsyncObservable.Unwrap result
 
-    let mapperUnwrappedAsync mapper a : Async<Types.AsyncObservable<'b>> = async {
+    let private mapperUnwrappedAsync mapper a : Async<Types.AsyncObservable<'b>> = async {
         let! result = mapper a
         return AsyncObservable.Unwrap result
     }
 
     /// Returns the observable sequence whose elements are pulled from
     /// the given enumerable sequence.
-    let ofSeq (xs : seq<'a>) : AsyncObservable<'a> =
+    let ofSeq (xs: seq<'a>) : AsyncObservable<'a> =
         AsyncObservable <| Creation.ofSeq xs
 
     /// Returns an observable sequence with no elements.
     let empty<'a> () : AsyncObservable<'a> =
         AsyncObservable <| Creation.empty ()
+
+    /// Creates an async observable (`AsyncObservable{'a}`) from the
+    /// given subscribe function.
+    let create (subscribe : AsyncObserver<'a> -> Async<AsyncDisposable>) : AsyncObservable<'a> =
+        let subscribe' (aobv : Types.AsyncObserver<'a>) : Async<Types.AsyncDisposable> =
+            async {
+                    let aobv' = AsyncObserver aobv
+                    let! subscription = subscribe aobv'
+                    return AsyncDisposable.Unwrap subscription
+            }
+
+        AsyncObservable subscribe'
 
     /// Returns the observable sequence that terminates exceptionally
     /// with the specified exception.
@@ -77,7 +90,7 @@ module AsyncObservable =
 
     /// Returns an observable sequence containing the single specified
     /// element.
-    let single (x : 'a) : AsyncObservable<'a> =
+    let single (x: 'a) : AsyncObservable<'a> =
         AsyncObservable <| Creation.single x
 
     /// Time shifts the observable sequence by the given timeout. The
@@ -94,7 +107,7 @@ module AsyncObservable =
         |> Timeshift.debounce msecs
         |> AsyncObservable
 
-    let zipSeq (sequence : seq<'b>) (source : AsyncObservable<'a>) : AsyncObservable<'a*'b> =
+    let zipSeq (sequence: seq<'b>) (source: AsyncObservable<'a>) : AsyncObservable<'a*'b> =
         source
         |> AsyncObservable.Unwrap
         |> Combine.zipSeq sequence
@@ -129,7 +142,7 @@ module AsyncObservable =
     // Applies the given async function to each element of the stream and
     /// returns the stream comprised of the results for each element
     /// where the function returns Some with some value.
-    let chooseAsync (chooser: 'a -> Async<'b option>) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
+    let chooseAsync (chooser: 'a -> Async<'b option>) (source: AsyncObservable<'a>) : AsyncObservable<'b> =
         AsyncObservable.Unwrap source
         |> Filter.chooseAsync chooser
         |> AsyncObservable
@@ -137,12 +150,12 @@ module AsyncObservable =
     /// Applies the given function to each element of the stream and
     /// returns the stream comprised of the results for each element
     /// where the function returns Some with some value.
-    let choose (chooser: 'a -> 'b option) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
+    let choose (chooser: 'a -> 'b option) (source: AsyncObservable<'a>) : AsyncObservable<'b> =
         chooseAsync  (fun x -> async { return chooser x }) source
 
     /// Merges an observable sequence of observable sequences into an
     /// observable sequence.
-    let inline mergeInner (source : AsyncObservable<AsyncObservable<'a>>) : AsyncObservable<'a> =
+    let inline mergeInner (source: AsyncObservable<AsyncObservable<'a>>) : AsyncObservable<'a> =
         source
         |> map AsyncObservable.Unwrap
         |> AsyncObservable.Unwrap
@@ -150,7 +163,7 @@ module AsyncObservable =
         |> AsyncObservable
 
     /// Merges an observable sequence with another observable sequences.
-    let inline merge (other : AsyncObservable<'a>) (source : AsyncObservable<'a>) : AsyncObservable<'a> =
+    let inline merge (other : AsyncObservable<'a>) (source: AsyncObservable<'a>) : AsyncObservable<'a> =
         ofSeq [source; other] |> mergeInner
 
     /// Returns an observable sequence that contains the elements of each given
@@ -197,7 +210,7 @@ module AsyncObservable =
     /// Transforms an observable sequence of observable sequences into
     /// an observable sequence producing values only from the most
     /// recent observable sequence.
-    let switchLatest (source : AsyncObservable<AsyncObservable<'a>>) : AsyncObservable<'a> =
+    let switchLatest (source: AsyncObservable<AsyncObservable<'a>>) : AsyncObservable<'a> =
         source
         |> map AsyncObservable.Unwrap
         |> AsyncObservable.Unwrap
@@ -207,7 +220,7 @@ module AsyncObservable =
     /// Transforms the items emitted by an source sequence into
     /// observable streams, and mirror those items emitted by the
     /// most-recently transformed observable sequence.
-    let flatMapLatest (mapper : 'a -> AsyncObservable<'b>) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
+    let flatMapLatest (mapper: 'a -> AsyncObservable<'b>) (source: AsyncObservable<'a>) : AsyncObservable<'b> =
         source
         |> map mapper
         |> switchLatest
@@ -215,7 +228,7 @@ module AsyncObservable =
     /// Asynchronosly transforms the items emitted by an source sequence
     /// into observable streams, and mirror those items emitted by the
     /// most-recently transformed observable sequence.
-    let flatMapLatestAsync (mapper : 'a -> Async<AsyncObservable<'b>>) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
+    let flatMapLatestAsync (mapper: 'a -> Async<AsyncObservable<'b>>) (source: AsyncObservable<'a>) : AsyncObservable<'b> =
         source
         |> mapAsync mapper
         |> switchLatest
@@ -236,7 +249,7 @@ module AsyncObservable =
 
     /// Return an observable sequence only containing the distinct
     /// contiguous elementsfrom the source sequence.
-    let distinctUntilChanged (source : AsyncObservable<'a>) : AsyncObservable<'a> =
+    let distinctUntilChanged (source: AsyncObservable<'a>) : AsyncObservable<'a> =
         AsyncObservable.Unwrap source
         |> Filter.distinctUntilChanged
         |> AsyncObservable
@@ -272,20 +285,20 @@ module AsyncObservable =
     /// Returns an observable sequence containing the first sequence's
     /// elements, followed by the elements of the handler sequence in
     /// case an exception occurred.
-    let inline catch (handler: exn -> AsyncObservable<'a>) (source: AsyncObservable<'a>) : AsyncObservable<'a> =
+    let catch (handler: exn -> AsyncObservable<'a>) (source: AsyncObservable<'a>) : AsyncObservable<'a> =
         AsyncObservable.Unwrap source
         |> Transform.catch (mapperUnwrapped handler)
         |> AsyncObservable
 
     /// Prepends a sequence of values to an observable sequence.
     /// Returns the source sequence prepended with the specified values.
-    let inline startWith (items : seq<'a>) (source : AsyncObservable<'a>) =
+    let inline startWith (items : seq<'a>) (source: AsyncObservable<'a>) =
         concat [ofSeq items; source]
 
     /// Merges the specified observable sequences into one observable
     /// sequence by combining elements of the sources into tuples.
     /// Returns an observable sequence containing the combined results.
-    let inline combineLatest (other : AsyncObservable<'b>) (source : AsyncObservable<'a>) : AsyncObservable<'a*'b> =
+    let inline combineLatest (other : AsyncObservable<'b>) (source: AsyncObservable<'a>) : AsyncObservable<'a*'b> =
         AsyncObservable.Unwrap source
         |> Combine.combineLatest (AsyncObservable.Unwrap other)
         |> AsyncObservable
@@ -294,7 +307,7 @@ module AsyncObservable =
     /// sequence by combining the values into tuples only when the first
     /// observable sequence produces an element. Returns the combined
     /// observable sequence.
-    let inline withLatestFrom (other : AsyncObservable<'b>) (source : AsyncObservable<'a>) : AsyncObservable<'a*'b> =
+    let inline withLatestFrom (other : AsyncObservable<'b>) (source: AsyncObservable<'a>) : AsyncObservable<'a*'b> =
         AsyncObservable.Unwrap source
         |> Combine.withLatestFrom (AsyncObservable.Unwrap other)
         |> AsyncObservable
@@ -302,7 +315,7 @@ module AsyncObservable =
     /// Groups the elements of an observable sequence according to a
     /// specified key mapper function. Returns a sequence of observable
     /// groups, each of which corresponds to a given key.
-    let groupBy (keyMapper: 'a -> 'g) (source : AsyncObservable<'a>) : AsyncObservable<AsyncObservable<'a>> =
+    let groupBy (keyMapper: 'a -> 'g) (source: AsyncObservable<'a>) : AsyncObservable<AsyncObservable<'a>> =
         AsyncObservable.Unwrap source
         |> Aggregate.groupBy keyMapper
         |> AsyncObservable
@@ -310,7 +323,7 @@ module AsyncObservable =
 
     /// Returns the values from the source observable sequence until the
     /// other observable sequence produces a value.
-    let takeUntil (other: AsyncObservable<'b>) (source : AsyncObservable<'a>) : AsyncObservable<'a> =
+    let takeUntil (other: AsyncObservable<'b>) (source: AsyncObservable<'a>) : AsyncObservable<'a> =
         AsyncObservable.Unwrap source
         |> Filter.takeUntil (AsyncObservable.Unwrap other)
         |> AsyncObservable

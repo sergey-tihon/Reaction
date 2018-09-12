@@ -5,8 +5,8 @@ open Core
 
 module Combine =
     // Concatenates an async observable of async observables
-    let concat (sources : seq<AsyncObservable<'a>>) : AsyncObservable<'a> =
-        let subscribe (aobv : AsyncObserver<'a>) =
+    let concat (sources: seq<AsyncObservable<'a>>) : AsyncObservable<'a> =
+        let subscribe (aobv: AsyncObserver<'a>) =
             let safeObserver = safeObserver aobv
 
             let innerAgent =
@@ -57,8 +57,8 @@ module Combine =
         subscribe
 
     // Merges an async observable of async observables
-    let mergeInner (source : AsyncObservable<AsyncObservable<'a>>) : AsyncObservable<'a> =
-        let subscribe (aobv : AsyncObserver<'a>) =
+    let mergeInner (source: AsyncObservable<AsyncObservable<'a>>) : AsyncObservable<'a> =
+        let subscribe (aobv: AsyncObserver<'a>) =
             let safeObserver = safeObserver aobv
             let refCount = refCountAgent 1 (async {
                 do! safeObserver OnCompleted
@@ -117,12 +117,12 @@ module Combine =
     | Source of Notification<'a>
     | Other of Notification<'b>
 
-    let combineLatest (other : AsyncObservable<'b>) (source : AsyncObservable<'a>) : AsyncObservable<'a*'b> =
-        let subscribe (aobv : AsyncObserver<'a*'b>) =
+    let combineLatest (other: AsyncObservable<'b>) (source: AsyncObservable<'a>) : AsyncObservable<'a*'b> =
+        let subscribe (aobv: AsyncObserver<'a*'b>) =
             let safeObserver = safeObserver aobv
 
             let agent = MailboxProcessor.Start(fun inbox ->
-                let rec messageLoop (source : option<'a>) (other : option<'b>) = async {
+                let rec messageLoop (source: option<'a>) (other: option<'b>) = async {
                     let! cn = inbox.Receive()
 
                     let onNextOption n =
@@ -166,8 +166,8 @@ module Combine =
             }
         subscribe
 
-    let withLatestFrom (other : AsyncObservable<'b>) (source : AsyncObservable<'a>) : AsyncObservable<'a*'b> =
-        let subscribe (aobv : AsyncObserver<'a*'b>) =
+    let withLatestFrom (other: AsyncObservable<'b>) (source: AsyncObservable<'a>) : AsyncObservable<'a*'b> =
+        let subscribe (aobv: AsyncObserver<'a*'b>) =
             let safeObserver = safeObserver aobv
 
             let agent = MailboxProcessor.Start(fun inbox ->
@@ -208,15 +208,15 @@ module Combine =
             )
 
             async {
-                let! dispose1 = source (fun (n : Notification<'a>) -> async { Source n |> agent.Post })
-                let! dispose2 = other (fun (n : Notification<'b>) -> async { Other n |> agent.Post })
+                let! dispose1 = other (fun (n : Notification<'b>) -> async { Other n |> agent.Post })
+                let! dispose2 = source (fun (n : Notification<'a>) -> async { Source n |> agent.Post })
 
                 return compositeDisposable [ dispose1; dispose2 ]
             }
         subscribe
 
-    let zipSeq (sequence : seq<'b>) (source : AsyncObservable<'a>) : AsyncObservable<'a*'b> =
-        let subscribe (aobv : AsyncObserver<'a*'b>) =
+    let zipSeq (sequence: seq<'b>) (source: AsyncObservable<'a>) : AsyncObservable<'a*'b> =
+        let subscribe (aobv: AsyncObserver<'a*'b>) =
             async {
                 let enumerator = sequence.GetEnumerator ()
                 let _obv n =

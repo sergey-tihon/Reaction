@@ -5,7 +5,7 @@ open Types
 open Core
 
 module Aggregate =
-    let scanAsync (initial : 's) (accumulator: 's -> 'a -> Async<'s>) (source : AsyncObservable<'a>) : AsyncObservable<'s> =
+    let scanAsync (initial: 's) (accumulator: 's -> 'a -> Async<'s>) (source: AsyncObservable<'a>) : AsyncObservable<'s> =
         let subscribe (aobv : AsyncObserver<'s>) =
             let mutable state = initial
 
@@ -24,8 +24,8 @@ module Aggregate =
             }
         subscribe
 
-    let groupBy (keyMapper: 'a -> 'g) (source : AsyncObservable<'a>) : AsyncObservable<AsyncObservable<'a>> =
-        let subscribe (aobv : AsyncObserver<AsyncObservable<'a>>) =
+    let groupBy (keyMapper: 'a -> 'g) (source: AsyncObservable<'a>) : AsyncObservable<AsyncObservable<'a>> =
+        let subscribe (aobv: AsyncObserver<AsyncObservable<'a>>) =
             let cancellationSource = new CancellationTokenSource()
             let agent = MailboxProcessor.Start((fun inbox ->
                 let rec messageLoop ((groups, disposed) : Map<'g, AsyncObserver<'a>>*bool) = async {

@@ -4,7 +4,7 @@ open Types
 open Core
 
 module Filter =
-    let chooseAsync (chooser: 'a -> Async<'b option>) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
+    let chooseAsync (chooser: 'a -> Async<'b option>) (source: AsyncObservable<'a>) : AsyncObservable<'b> =
         let subscribe (obvAsync : Types.AsyncObserver<'b>) =
             async {
                 let _obv n =
@@ -26,7 +26,7 @@ module Filter =
         subscribe
 
     // The classic filter (where) operator with an async predicate
-    let filterAsync (predicate : 'a -> Async<bool>) (source : AsyncObservable<'a>) : AsyncObservable<'a> =
+    let filterAsync (predicate: 'a -> Async<bool>) (source: AsyncObservable<'a>) : AsyncObservable<'a> =
         let predicate' a = async {
             let! result = predicate a
             match result with
@@ -35,7 +35,7 @@ module Filter =
         }
         chooseAsync predicate' source
 
-    let distinctUntilChanged (source : AsyncObservable<'a>) : AsyncObservable<'a> =
+    let distinctUntilChanged (source: AsyncObservable<'a>) : AsyncObservable<'a> =
         let subscribe (aobv : AsyncObserver<'a>) =
             let safeObserver = safeObserver aobv
             let agent = MailboxProcessor.Start(fun inbox ->
@@ -70,7 +70,7 @@ module Filter =
             }
         subscribe
 
-    let takeUntil (other: AsyncObservable<'b>) (source : AsyncObservable<'a>) : AsyncObservable<'a> =
+    let takeUntil (other: AsyncObservable<'b>) (source: AsyncObservable<'a>) : AsyncObservable<'a> =
         let subscribe (obvAsync : Types.AsyncObserver<'a>) =
             let safeObv = safeObserver obvAsync
 

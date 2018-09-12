@@ -5,7 +5,7 @@ open Core
 
 module Transform =
     // The classic map (select) operator with async mapper
-    let mapAsync (mapper : 'a -> Async<'b>) (source : AsyncObservable<'a>) : AsyncObservable<'b> =
+    let mapAsync (mapper: 'a -> Async<'b>) (source: AsyncObservable<'a>) : AsyncObservable<'b> =
         let subscribe (aobv : AsyncObserver<'b>) =
             async {
                 let _obv n =
@@ -22,7 +22,7 @@ module Transform =
             }
         subscribe
 
-    let switchLatest (source : AsyncObservable<AsyncObservable<'a>>) : AsyncObservable<'a> =
+    let switchLatest (source: AsyncObservable<AsyncObservable<'a>>) : AsyncObservable<'a> =
         let subscribe (aobv : AsyncObserver<'a>) =
             let safeObserver = safeObserver aobv
             let refCount = refCountAgent 1 (async {
@@ -57,7 +57,7 @@ module Transform =
                 )
 
             async {
-                let obv (ns : Notification<AsyncObservable<'a>>) =
+                let obv (ns: Notification<AsyncObservable<'a>>) =
                     async {
                         match ns with
                         | OnNext xs ->
@@ -77,8 +77,8 @@ module Transform =
             }
         subscribe
 
-    let catch (handler: exn -> AsyncObservable<'a>) (source : AsyncObservable<'a>) : AsyncObservable<'a> =
-        let subscribe (aobv : AsyncObserver<'a>) =
+    let catch (handler: exn -> AsyncObservable<'a>) (source: AsyncObservable<'a>) : AsyncObservable<'a> =
+        let subscribe (aobv: AsyncObserver<'a>) =
             async {
                 let mutable disposable = disposableEmpty
 

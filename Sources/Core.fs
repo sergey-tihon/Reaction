@@ -12,7 +12,7 @@ module Core =
             return ()
         }
 
-    let compositeDisposable (ds : AsyncDisposable seq) : AsyncDisposable =
+    let compositeDisposable (ds: AsyncDisposable seq) : AsyncDisposable =
         let cancel () = async {
             for d in ds do
                 do! d ()
@@ -30,7 +30,7 @@ module Core =
 
     /// Safe observer that wraps the given observer and makes sure that
     /// the Rx grammar (onNext* (onError|onCompleted)?) is not violated.
-    let safeObserver (obv : AsyncObserver<'a>) =
+    let safeObserver (obv: AsyncObserver<'a>) =
         let agent = MailboxProcessor.Start (fun inbox ->
             let rec messageLoop stopped = async {
                 let! n = inbox.Receive()

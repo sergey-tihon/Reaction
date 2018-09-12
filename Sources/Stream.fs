@@ -11,7 +11,7 @@ module Streams =
     let stream<'a> () : AsyncObserver<'a> * AsyncObservable<'a> =
         let obvs = new List<AsyncObserver<'a>>()
 
-        let subscribe (aobv : AsyncObserver<'a>) : Async<AsyncDisposable> =
+        let subscribe (aobv: AsyncObserver<'a>) : Async<AsyncDisposable> =
             let sobv = safeObserver aobv
             obvs.Add sobv
 
@@ -39,7 +39,7 @@ module Streams =
 
     /// A cold stream that only supports a single subscriber
     let singleStream () : AsyncObserver<'a> * AsyncObservable<'a> =
-        let mutable oobv : AsyncObserver<'a> option = None
+        let mutable oobv: AsyncObserver<'a> option = None
         let waitTokenSource = new CancellationTokenSource ()
 
         let subscribe (aobv : AsyncObserver<'a>) : Async<AsyncDisposable> =
@@ -57,7 +57,7 @@ module Streams =
                 return cancel
             }
 
-        let obv (n : Notification<'a>) =
+        let obv (n: Notification<'a>) =
             async {
                 while oobv.IsNone do
                     // Wait for subscriber
@@ -97,7 +97,7 @@ module Streams =
             messageLoop ()
         )
 
-        let subscribe (aobv : AsyncObserver<'a>) : Async<AsyncDisposable> =
+        let subscribe (aobv: AsyncObserver<'a>) : Async<AsyncDisposable> =
             let sobv = safeObserver aobv
             obvs.Add sobv
 

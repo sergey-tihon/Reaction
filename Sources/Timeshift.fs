@@ -6,7 +6,7 @@ open Core
 
 module Timeshift =
     // Delays each notification with the given number of milliseconds
-    let delay (msecs : int) (source : AsyncObservable<'a>) : AsyncObservable<'a> =
+    let delay (msecs: int) (source: AsyncObservable<'a>) : AsyncObservable<'a> =
         let subscribe (aobv : AsyncObserver<'a>) =
             let agent = MailboxProcessor.Start(fun inbox ->
                 let rec messageLoop state = async {
@@ -34,8 +34,8 @@ module Timeshift =
             }
         subscribe
 
-    let debounce msecs (source : AsyncObservable<'a>) : AsyncObservable<'a> =
-        let subscribe (aobv : AsyncObserver<'a>) =
+    let debounce msecs (source: AsyncObservable<'a>) : AsyncObservable<'a> =
+        let subscribe (aobv: AsyncObserver<'a>) =
             let safeObserver = safeObserver aobv
             let infinite = Seq.initInfinite (fun index -> index)
 
@@ -66,7 +66,7 @@ module Timeshift =
             async {
                 let indexer = infinite.GetEnumerator ()
 
-                let obv (n : Notification<'a>) =
+                let obv (n: Notification<'a>) =
                     async {
                         indexer.MoveNext () |> ignore
                         let index = indexer.Current

@@ -6,7 +6,6 @@
   <ItemGroup>
     <Compile Include="Utils.fs" />
     <Compile Include="Context.fs" />
-    <Compile Include="ContextTest.fs" />
     <Compile Include="ObserverTest.fs" />
     <Compile Include="CreateTest.fs" />
     <Compile Include="MapTest.fs" />
@@ -17,6 +16,7 @@
     <Compile Include="GroupByTest.fs" />
     <Compile Include="BindTest.fs" />
     <Compile Include="TakeUntilTest.fs" />
+    <Compile Include="AsyncSeqTest.fs" />
     <Compile Include="QueryTest.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>

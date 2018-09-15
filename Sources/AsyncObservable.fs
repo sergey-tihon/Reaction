@@ -1,5 +1,9 @@
 namespace Reaction
 
+#if !FABLE_COMPILER
+open FSharp.Control
+#endif
+
 [<AutoOpen>]
 module AsyncObservable =
     /// AsyncObservable as a single case union type to attach methods such as SubscribeAsync.
@@ -327,3 +331,17 @@ module AsyncObservable =
         AsyncObservable.Unwrap source
         |> Filter.takeUntil (AsyncObservable.Unwrap other)
         |> AsyncObservable
+
+#if !FABLE_COMPILER
+    /// Convert async sequence into an async observable.
+    let ofAsyncSeq (xs: AsyncSeq<'a>) : AsyncObservable<'a> =
+        Creation.ofAsyncSeq xs
+        |> AsyncObservable
+
+    /// Convert async observable to async sequence, non-blocking.
+    /// Producer will be awaited until item is consumed by the async
+    /// enumerator.
+    let toAsyncSeq (source: AsyncObservable<'a>) : AsyncSeq<'a> =
+        AsyncObservable.Unwrap source
+        |> Leave.toAsyncSeq
+#endif

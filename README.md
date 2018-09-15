@@ -2,9 +2,7 @@
 
 > Reaction is a lightweight Async Reactive library for F#.
 
-Reaction is an implementation of Async Observables ([ReactiveX](http://reactivex.io/)) and was designed spesifically for targeting [Fable](http://fable.io/) which means that the code may be [transpiled](https://en.wikipedia.org/wiki/Source-to-source_compiler) to JavaScript, and thus the same F# code may be used both client and server side for full stack software development.
-
-The project for experimenting with async reactive functional programming (Async Observables) in F#. The project is heavily inspired by [aioreactive](https://github.com/dbrattli/aioreactive).
+Reaction is an F# implementation of Async Observables ([ReactiveX](http://reactivex.io/)) and was designed spesifically for targeting [Fable](http://fable.io/) which means that the code may be [transpiled](https://en.wikipedia.org/wiki/Source-to-source_compiler) to JavaScript, and thus the same F# code may be used both client and server side for full stack software development. The project is heavily inspired by [aioreactive](https://github.com/dbrattli/aioreactive).
 
 See [Fable Reaction](https://github.com/dbrattli/Fable.Reaction) for Elmish-ish use of Reaction.
 
@@ -17,6 +15,15 @@ paket add Reaction --project <project>
 ## Async Observables
 
 Reaction is an implementation of Async Observable. The difference between an "Async Observable" and an "Observable" is that with "Async Observables" you need to await operations such as Subscribe, OnNext, OnError, OnCompleted. This enables Subscribe to await async operations i.e setup network connections, and observers may finally await side effects such as writing to disk (observers are all about side-effects right?).
+
+This diagram shows the how Async Observables relates to other collections and values.
+
+| Command | Single Value | Multiple Values
+| --- | --- | --- |
+| Synchronous pull  | unit -> 'a | [seq<'a>](https://msdn.microsoft.com/en-us/visualfsharpdocs/conceptual/collections.seq-module-%5Bfsharp%5D?f=255&MSPPError=-2147217396) |
+| Synchronous push  |'a -> unit | [Observable<'a>](http://fsprojects.github.io/FSharp.Control.Reactive/tutorial.html) |
+| Asynchronous pull | unit -> [Async<'a>](https://msdn.microsoft.com/en-us/visualfsharpdocs/conceptual/control.async-class-%5Bfsharp%5D) | [AsyncSeq<'a>](http://fsprojects.github.io/FSharp.Control.AsyncSeq/library/AsyncSeq.html) |
+| Asynchronous push |'a -> [Async\<unit\>](https://msdn.microsoft.com/en-us/visualfsharpdocs/conceptual/control.async-class-%5Bfsharp%5D) | **AsyncObservable<'a>** |
 
 Reaction is built upon simple functions instead of classes and the traditional Rx interfaces. Some of the operators uses mailbox processors (actors) to implement the observer pipeline in order to avoid locks and mutables. This makes the code more Fable friendly. Here are the core types:
 
@@ -70,9 +77,10 @@ Functions for creating (`'a -> AsyncObservable<'a>`) an async observable.
 - **empty** : unit -> AsyncObservable<'a>
 - **single** : 'a -> AsyncObservable<'a>
 - **fail** : exn -> AsyncObservable<'a>
-- **ofSeq** : seq< 'a> -> AsyncObservable<'a>
 - **defer** : (unit -> AsyncObservable<'a>) -> AsyncObservable<'a>
 - **create** : (AsyncObserver\<'a\> -> Async\<AsyncDisposable\>) -> AsyncObservable<'a>
+- **ofSeq** : seq<'a> -> AsyncObservable<'a>
+- **ofAsyncSeq** : AsyncSeq<'a> -> AsyncObservable<'a> *(Not available in Fable)*
 
 ### Transform
 
@@ -126,6 +134,12 @@ Functions for time-shifting (`AsyncObservable<'a> -> AsyncObservable<'a>`) an as
 
 - **delay** : int -> AsyncObservable<'a> -> AsyncObservable<'a>
 - **debounce** : int -> AsyncObservable<'a> -> AsyncObservable<'a>
+
+### Leave
+
+Functions for leaving (`AsyncObservable<'a> -> 'a`) the async observable.
+
+-- **toAsyncSeq** : AsyncObservable<'a> -> AsyncSeq<'a> *(Not available in Fable)*
 
 ### Streams
 

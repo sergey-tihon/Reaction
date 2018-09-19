@@ -13,6 +13,6 @@ type QueryBuilder() =
 
 [<AutoOpen>]
 module Query =
-    // Query builder for an async reactive event source
+    /// Query builder for an async reactive event source
     let reaction = new QueryBuilder()
     let rx = reaction // Shorter alias

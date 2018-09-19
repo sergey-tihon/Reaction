@@ -97,6 +97,16 @@ module AsyncObservable =
     let single (x: 'a) : AsyncObservable<'a> =
         AsyncObservable <| Creation.single x
 
+    /// Returns an observable sequence that triggers the increasing
+    /// sequence starting with 0 after the given period.
+    let interval periodInMilliseconds : AsyncObservable<int> =
+        Creation.timer periodInMilliseconds periodInMilliseconds |> AsyncObservable
+
+    /// Returns an observable sequence that triggers the value 0
+    /// after the given duetime.
+    let timer dueTime : AsyncObservable<int> =
+        Creation.timer dueTime 0 |> AsyncObservable
+
     /// Time shifts the observable sequence by the given timeout. The
     /// relative time intervals between the values are preserved.
     let delay msecs (source: AsyncObservable<'a>) : AsyncObservable<'a> =

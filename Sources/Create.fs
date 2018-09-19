@@ -104,19 +104,22 @@ module Creation =
             }
         subscribe
 
-    let timeout (msecs: int) (period: int): AsyncObservable<bool> =
-        let subscribe  (aobv : AsyncObserver<bool>) : Async<AsyncDisposable> =
+    let timer (msecs: int) (period: int): AsyncObservable<int> =
+        let subscribe  (aobv : AsyncObserver<int>) : Async<AsyncDisposable> =
             let cancel, token = Core.canceller ()
             async {
-                let rec handler msecs = async {
+                let rec handler msecs next = async {
                     if not token.IsCancellationRequested then
                         do! Async.Sleep msecs
-                        do! OnNext true |> aobv
+                        do! OnNext next |> aobv
 
-                        return! handler period
+                        if period > 0 then
+                            return! handler period (next + 1)
+                        else
+                            do! aobv OnCompleted
                 }
 
-                Async.StartImmediate ((handler msecs), token)
+                Async.StartImmediate ((handler msecs 0), token)
                 return cancel
             }
 

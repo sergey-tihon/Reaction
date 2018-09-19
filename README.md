@@ -68,7 +68,7 @@ Async.Start main
 
 The following parameterized async observerable returning functions (operators) are
 currently supported. Other operators may be implemented on-demand, but the goal is to keep it simple
-and not  make this into a full featured [ReactiveX](http://reactivex.io/) implementation.
+and not make this into a full featured [ReactiveX](http://reactivex.io/) implementation (if possible).
 
 ### Create
 
@@ -81,6 +81,8 @@ Functions for creating (`'a -> AsyncObservable<'a>`) an async observable.
 - **create** : (AsyncObserver\<'a\> -> Async\<AsyncDisposable\>) -> AsyncObservable<'a>
 - **ofSeq** : seq<'a> -> AsyncObservable<'a>
 - **ofAsyncSeq** : AsyncSeq<'a> -> AsyncObservable<'a> *(Not available in Fable)*
+- **timer** : int -> AsyncObservable\<int\>
+- **interval** int -> AsyncObservable\<int\>
 
 ### Transform
 

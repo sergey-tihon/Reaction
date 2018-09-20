@@ -25,7 +25,7 @@ module Transform =
     let switchLatest (source: AsyncObservable<AsyncObservable<'a>>) : AsyncObservable<'a> =
         let subscribe (aobv : AsyncObserver<'a>) =
             let safeObserver = safeObserver aobv
-            let refCount = refCountAgent 1 (async {
+            let refCount = refCountAgent 2 (async { // 2 = Main observable + dispsableEmpty.
                 do! safeObserver OnCompleted
             })
 
@@ -43,6 +43,8 @@ module Transform =
                         let getCurrent = async {
                             match cmd with
                             | InnerObservable xs ->
+                                do! current ()
+                                refCount.Post Decrease
                                 let! inner = xs obv
                                 return inner
                             | Dispose ->

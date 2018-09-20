@@ -89,7 +89,6 @@ module Creation =
         ofSeq [ x ]
 
     let defer (factory: unit -> AsyncObservable<'a>) : AsyncObservable<'a> =
-
         let subscribe  (aobv : AsyncObserver<'a>) : Async<AsyncDisposable> =
             async {
                 let result =
@@ -100,7 +99,6 @@ module Creation =
                         fail ex
 
                 return! result aobv
-
             }
         subscribe
 
@@ -109,14 +107,13 @@ module Creation =
             let cancel, token = Core.canceller ()
             async {
                 let rec handler msecs next = async {
-                    if not token.IsCancellationRequested then
-                        do! Async.Sleep msecs
-                        do! OnNext next |> aobv
+                    do! Async.Sleep msecs
+                    do! OnNext next |> aobv
 
-                        if period > 0 then
-                            return! handler period (next + 1)
-                        else
-                            do! aobv OnCompleted
+                    if period > 0 then
+                        return! handler period (next + 1)
+                    else
+                        do! aobv OnCompleted
                 }
 
                 Async.StartImmediate ((handler msecs 0), token)

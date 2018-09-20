@@ -22,8 +22,7 @@ module Core =
     let canceller () =
         let cancellationSource = new CancellationTokenSource()
         let cancel () = async {
-            cancellationSource.Cancel()
-            ()
+            cancellationSource.Cancel ()
         }
 
         cancel, cancellationSource.Token

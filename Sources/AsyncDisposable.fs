@@ -1,7 +1,7 @@
 namespace Reaction
 
 type AsyncDisposable = AsyncDisposable of Types.AsyncDisposable with
-    static member Unwrap (AsyncDisposable dsp) : Types.AsyncDisposable = dsp
+    static member internal Unwrap (AsyncDisposable dsp) : Types.AsyncDisposable = dsp
 
     static member Empty = AsyncDisposable Core.disposableEmpty
 

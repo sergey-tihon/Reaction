@@ -80,9 +80,9 @@ module AsyncObservable =
     let create (subscribe : AsyncObserver<'a> -> Async<AsyncDisposable>) : AsyncObservable<'a> =
         let subscribe' (aobv : Types.AsyncObserver<'a>) : Async<Types.AsyncDisposable> =
             async {
-                    let aobv' = AsyncObserver aobv
-                    let! subscription = subscribe aobv'
-                    return AsyncDisposable.Unwrap subscription
+                let aobv' = AsyncObserver aobv
+                let! subscription = subscribe aobv'
+                return AsyncDisposable.Unwrap subscription
             }
 
         AsyncObservable subscribe'
@@ -90,12 +90,14 @@ module AsyncObservable =
     /// Returns the observable sequence that terminates exceptionally
     /// with the specified exception.
     let fail<'a> ex : AsyncObservable<'a> =
-        AsyncObservable <| Creation.fail ex
+        Creation.fail ex
+        |> AsyncObservable
 
     /// Returns an observable sequence containing the single specified
     /// element.
     let single (x: 'a) : AsyncObservable<'a> =
-        AsyncObservable <| Creation.single x
+        Creation.single x
+        |> AsyncObservable
 
     /// Returns an observable sequence that triggers the increasing
     /// sequence starting with 0 after the given period.

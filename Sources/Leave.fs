@@ -18,7 +18,7 @@ module Leave =
                 do! Async.AwaitWaitHandle pong |> Async.Ignore
             }
 
-        let result = asyncSeq {
+        asyncSeq {
             let! dispose = source _obv
             let mutable running = true
 
@@ -36,5 +36,4 @@ module Leave =
 
             do! dispose ()
         }
-        result
 #endif

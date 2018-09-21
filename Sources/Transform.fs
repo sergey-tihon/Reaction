@@ -38,7 +38,7 @@ module Transform =
                     }
 
                 MailboxProcessor.Start(fun inbox ->
-                    let rec messageLoop (current : AsyncDisposable) = async {
+                    let rec messageLoop (current: AsyncDisposable) = async {
                         let! cmd = inbox.Receive()
                         let getCurrent = async {
                             match cmd with

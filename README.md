@@ -18,7 +18,7 @@ Reaction is an implementation of Async Observable. The difference between an "As
 
 This diagram shows the how Async Observables relates to other collections and values.
 
-| Command | Single Value | Multiple Values
+|  | Single Value | Multiple Values
 | --- | --- | --- |
 | Synchronous pull  | unit -> 'a | [seq<'a>](https://msdn.microsoft.com/en-us/visualfsharpdocs/conceptual/collections.seq-module-%5Bfsharp%5D?f=255&MSPPError=-2147217396) |
 | Synchronous push  |'a -> unit | [Observable<'a>](http://fsprojects.github.io/FSharp.Control.Reactive/tutorial.html) |
@@ -40,6 +40,10 @@ type AsyncObservable<'a> = AsyncObserver<'a> -> Async<AsyncDisposable>
 
 In the API these types have been wrapped in single case union types to enable member methods and a more familiar Rx programming syntax (see usage below).
 
+```f#
+let! disposable = obv.SubscribeAsync obsAsync
+```
+
 ## Usage
 
 ```f#
@@ -58,7 +62,7 @@ let main = async {
             | OnCompleted -> printfn "OnCompleted"
         }
 
-    let! subscription = xs.SubscribeAsync obv
+    let! disposable = xs.SubscribeAsync obv
 }
 
 Async.Start main

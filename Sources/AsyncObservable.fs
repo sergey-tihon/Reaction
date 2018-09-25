@@ -66,7 +66,12 @@ module AsyncObservable =
         return AsyncObservable.Unwrap result
     }
 
-    /// Returns the observable sequence whose elements are pulled from
+    /// Returns the async observable sequence whose single element is
+    /// the result of the given async workflow.
+    let ofAsync (xs: Async<'a>) : AsyncObservable<'a> =
+        AsyncObservable <| Creation.ofAsync xs
+
+    /// Returns the async observable sequence whose elements are pulled from
     /// the given enumerable sequence.
     let ofSeq (xs: seq<'a>) : AsyncObservable<'a> =
         AsyncObservable <| Creation.ofSeq xs

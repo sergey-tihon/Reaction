@@ -11,7 +11,7 @@ open Types
 
 module Creation =
     // Create async observable from async worker function
-    let ofAsync (worker: AsyncObserver<'a> -> CancellationToken -> Async<unit>) : AsyncObservable<_> =
+    let ofAsyncWorker (worker: AsyncObserver<'a> -> CancellationToken -> Async<unit>) : AsyncObservable<_> =
         let subscribe (aobv : AsyncObserver<_>) : Async<AsyncDisposable> =
             let cancel, token = Core.canceller ()
             let obv = Core.safeObserver aobv
@@ -22,20 +22,27 @@ module Creation =
             }
         subscribe
 
+    let inline ofAsync(workflow : Async<'a>)  : AsyncObservable<'a> =
+        ofAsyncWorker (fun obv _ -> async {
+            let! result = workflow
+            do! OnNext result |> obv
+            do! OnCompleted |> obv
+        })
+
     // An async observervable that just completes when subscribed.
     let inline empty () : AsyncObservable<'a> =
-        ofAsync (fun obv _ -> async {
+        ofAsyncWorker (fun obv _ -> async {
             do! OnCompleted |> obv
         })
 
     // An async observervable that just fails with an error when subscribed.
     let inline fail (exn) : AsyncObservable<'a> =
-        ofAsync (fun obv _ -> async {
+        ofAsyncWorker (fun obv _ -> async {
             do! OnError exn |> obv
         })
 
     let ofSeq (xs: seq<'a>) : AsyncObservable<'a> =
-        ofAsync (fun obv token -> async {
+        ofAsyncWorker (fun obv token -> async {
             for x in xs do
                 if token.IsCancellationRequested then
                     raise <| OperationCanceledException("Operation cancelled")

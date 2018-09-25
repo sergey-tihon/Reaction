@@ -45,7 +45,7 @@ type TestObserver<'a>() =
         }
 
 let fromNotification (notifications : seq<Notification<'a>>) =
-    let obs = Creation.ofAsync (fun obv token -> async {
+    let obs = Creation.ofAsyncWorker (fun obv token -> async {
         for notification in notifications do
             if token.IsCancellationRequested then
                 raise (OperationCanceledException("Operation cancelled"))

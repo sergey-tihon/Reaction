@@ -1,9 +1,9 @@
 module Tests.Filter
 
-open System
 open System.Threading.Tasks
 
 open Reaction
+open Reaction.AsyncObservable
 
 open NUnit.Framework
 open FsUnit
@@ -23,7 +23,7 @@ let ``Test filter``() = toTask <| async {
     let obv = TestObserver<int>()
 
     // Act
-    let! sub = xs.SubscribeAsync obv.PostAsync
+    let! sub = xs.SubscribeAsync obv
     let! result = obv.Await ()
 
     // Assert
@@ -50,7 +50,7 @@ let ``Test filter predicate throws exception``() = toTask <| async {
     let obv = TestObserver<int>()
 
     // Act
-    let! sub = xs.SubscribeAsync obv.PostAsync
+    let! sub = xs.SubscribeAsync obv
 
     try
         do! obv.AwaitIgnore ()

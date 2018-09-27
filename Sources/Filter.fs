@@ -1,32 +1,47 @@
 namespace Reaction
 
-open Types
-open Core
+open Reaction.Core
 
+[<RequireQualifiedAccess>]
 module Filter =
-    let chooseAsync (chooser: 'a -> Async<'b option>) (source: AsyncObservable<'a>) : AsyncObservable<'b> =
-        let subscribe (obvAsync : Types.AsyncObserver<'b>) =
+    /// Applies the given async function to each element of the stream and
+    /// returns the stream comprised of the results for each element
+    /// where the function returns Some with some value.
+    let chooseAsync (chooser: 'a -> Async<'b option>) (source: IAsyncObservable<'a>) : IAsyncObservable<'b> =
+        let subscribeAsync (obvAsync : IAsyncObserver<'b>) =
             async {
-                let _obv n =
-                    async {
-                        match n with
-                        | OnNext x ->
+                let _obv =
+                    { new IAsyncObserver<'a> with
+                        member this.OnNextAsync x = async {
                             // Let exceptions bubble to the top
                             let! result = chooser x
                             match result with
                             | Some b ->
-                                do! OnNext b |> obvAsync
+                                do! obvAsync.OnNextAsync b
                             | None -> ()
-                        | OnError ex -> do! OnError ex |> obvAsync
-                        | OnCompleted -> do! OnCompleted |> obvAsync
-
+                        }
+                        member this.OnErrorAsync err = async {
+                            do! obvAsync.OnErrorAsync err
+                        }
+                        member this.OnCompletedAsync () = async {
+                            do! obvAsync.OnCompletedAsync ()
+                        }
                     }
-                return! source _obv
+                return! source.SubscribeAsync _obv
             }
-        subscribe
 
-    // The classic filter (where) operator with an async predicate
-    let filterAsync (predicate: 'a -> Async<bool>) (source: AsyncObservable<'a>) : AsyncObservable<'a> =
+        { new IAsyncObservable<'b> with member __.SubscribeAsync o = subscribeAsync o }
+
+    /// Applies the given function to each element of the stream and
+    /// returns the stream comprised of the results for each element
+    /// where the function returns Some with some value.
+    let choose (chooser: 'a -> 'b option) (source: IAsyncObservable<'a>) : IAsyncObservable<'b> =
+        chooseAsync  (fun x -> async { return chooser x }) source
+
+    /// Filters the elements of an observable sequence based on an async
+    /// predicate. Returns an observable sequence that contains elements
+    /// from the input sequence that satisfy the condition.
+    let filterAsync (predicate: 'a -> Async<bool>) (source: IAsyncObservable<'a>) : IAsyncObservable<'a> =
         let predicate' a = async {
             let! result = predicate a
             match result with
@@ -35,8 +50,16 @@ module Filter =
         }
         chooseAsync predicate' source
 
-    let distinctUntilChanged (source: AsyncObservable<'a>) : AsyncObservable<'a> =
-        let subscribe (aobv : AsyncObserver<'a>) =
+    /// Filters the elements of an observable sequence based on a
+    /// predicate. Returns an observable sequence that contains elements
+    /// from the input sequence that satisfy the condition.
+    let filter (predicate: 'a -> bool) (source: IAsyncObservable<'a>) : IAsyncObservable<'a> =
+        filterAsync (fun x -> async { return predicate x }) source
+
+    /// Return an observable sequence only containing the distinct
+    /// contiguous elementsfrom the source sequence.
+    let distinctUntilChanged (source: IAsyncObservable<'a>) : IAsyncObservable<'a> =
+        let subscribeAsync (aobv : IAsyncObserver<'a>) =
             let safeObserver = safeObserver aobv
             let agent = MailboxProcessor.Start(fun inbox ->
                 let rec messageLoop (latest : Notification<'a>) = async {
@@ -47,11 +70,13 @@ module Filter =
                         | OnNext x ->
                             if n <> latest then
                                 try
-                                    do! OnNext x |> safeObserver
+                                    do! safeObserver.OnNextAsync x
                                 with
-                                | ex -> do! OnError ex |> safeObserver
-                        | _ ->
-                            do! safeObserver n
+                                | ex -> do! safeObserver.OnErrorAsync ex
+                        | OnError err ->
+                            do! safeObserver.OnErrorAsync err
+                        | OnCompleted ->
+                            do! safeObserver.OnCompletedAsync ()
                         return n
                     }
 
@@ -66,12 +91,14 @@ module Filter =
                     async {
                         agent.Post n
                     }
-                return! source obv
+                return! AsyncObserver obv |> source.SubscribeAsync
             }
-        subscribe
+        { new IAsyncObservable<'a> with member __.SubscribeAsync o = subscribeAsync o }
 
-    let takeUntil (other: AsyncObservable<'b>) (source: AsyncObservable<'a>) : AsyncObservable<'a> =
-        let subscribe (obvAsync : Types.AsyncObserver<'a>) =
+    /// Returns the values from the source observable sequence until the
+    /// other observable sequence produces a value.
+    let takeUntil (other: IAsyncObservable<'b>) (source: IAsyncObservable<'a>) : IAsyncObservable<'a> =
+        let subscribeAsync (obvAsync : IAsyncObserver<'a>) =
             let safeObv = safeObserver obvAsync
 
             async {
@@ -79,14 +106,14 @@ module Filter =
                     async {
                         match n with
                         | OnNext x ->
-                            do! OnCompleted |> safeObv
-                        | OnError ex -> do! OnError ex |> safeObv
+                            do! safeObv.OnCompletedAsync ()
+                        | OnError ex -> do! safeObv.OnErrorAsync ex
                         | OnCompleted -> ()
                     }
 
-                let! sub2 = other _obv
-                let! sub1 = source safeObv
+                let! sub2 = AsyncObserver _obv |> other.SubscribeAsync
+                let! sub1 = source.SubscribeAsync safeObv
 
-                return compositeDisposable [ sub1; sub2 ]
+                return AsyncDisposable.Composite [ sub1; sub2 ]
             }
-        subscribe
+        { new IAsyncObservable<'a> with member __.SubscribeAsync o = subscribeAsync o }

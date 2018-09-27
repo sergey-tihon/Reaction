@@ -7,29 +7,17 @@ open Types
 module Core =
     let infinite = Seq.initInfinite (fun index -> index)
 
-    let disposableEmpty () =
-        async {
-            return ()
-        }
-
-    let compositeDisposable (ds: AsyncDisposable seq) : AsyncDisposable =
-        let cancel () = async {
-            for d in ds do
-                do! d ()
-        }
-        cancel
-
     let canceller () =
         let cancellationSource = new CancellationTokenSource()
         let cancel () = async {
             cancellationSource.Cancel ()
         }
-
-        cancel, cancellationSource.Token
+        let disposable = { new IAsyncDisposable with member __.DisposeAsync () = cancel () }
+        disposable, cancellationSource.Token
 
     /// Safe observer that wraps the given observer and makes sure that
     /// the Rx grammar (onNext* (onError|onCompleted)?) is not violated.
-    let safeObserver (obv: AsyncObserver<'a>) =
+    let safeObserver (obv: IAsyncObserver<'a>) : IAsyncObserver<'a> =
         let agent = MailboxProcessor.Start (fun inbox ->
             let rec messageLoop stopped = async {
                 let! n = inbox.Receive()
@@ -41,14 +29,17 @@ module Core =
                     match n with
                     | OnNext x ->
                         try
-                            do! OnNext x |> obv
+                            do! obv.OnNextAsync x
                             return false
                         with
                         | ex ->
-                            do! OnError ex |> obv
+                            do! obv.OnErrorAsync ex
                             return true
-                    | _ ->
-                        do! obv n
+                    | OnError ex ->
+                        do! obv.OnErrorAsync ex
+                        return true
+                    | OnCompleted ->
+                        do! obv.OnCompletedAsync ()
                         return true
                 }
 
@@ -57,10 +48,17 @@ module Core =
 
             messageLoop false
         )
-        let safeObv (n : Notification<'a>) = async {
-            agent.Post n
+        { new IAsyncObserver<'a> with
+            member this.OnNextAsync x = async {
+                OnNext x |> agent.Post
+            }
+            member this.OnErrorAsync err = async {
+                OnError err |> agent.Post
+            }
+            member this.OnCompletedAsync () = async {
+                OnCompleted  |> agent.Post
+            }
         }
-        safeObv
 
     let refCountAgent initial action =
         MailboxProcessor.Start(fun inbox ->
@@ -80,6 +78,7 @@ module Core =
 
             messageLoop initial
         )
+
 
 [<AutoOpen>]
 module Context =

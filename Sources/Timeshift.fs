@@ -1,15 +1,17 @@
 namespace Reaction
 
 open System
-open Types
-open Core
+
+open Reaction.Core
 
 
+[<RequireQualifiedAccess>]
 module Timeshift =
 
-    // Delays each notification with the given number of milliseconds
-    let delay (msecs: int) (source: AsyncObservable<'a>) : AsyncObservable<'a> =
-        let subscribe (aobv : AsyncObserver<'a>) =
+    /// Time shifts the observable sequence by the given timeout. The
+    /// relative time intervals between the values are preserved.
+    let delay (msecs: int) (source: IAsyncObservable<'a>) : IAsyncObservable<'a> =
+        let subscribeAsync (aobv : IAsyncObserver<'a>) =
             let agent = MailboxProcessor.Start(fun inbox ->
                 let rec messageLoop state = async {
                     let! n, dueTime = inbox.Receive()
@@ -18,7 +20,10 @@ module Timeshift =
                     let msecs = Convert.ToInt32 diff.TotalMilliseconds
                     if msecs > 0 then
                         do! ReactionContext.SleepAsync msecs
-                    do! aobv n
+                    match n with
+                    | OnNext x -> do! aobv.OnNextAsync x
+                    | OnError ex -> do! aobv.OnErrorAsync ex
+                    | OnCompleted -> do! aobv.OnCompletedAsync ()
 
                     return! messageLoop state
                 }
@@ -32,12 +37,14 @@ module Timeshift =
                         let dueTime = ReactionContext.Now + TimeSpan.FromMilliseconds(float msecs)
                         agent.Post (n, dueTime)
                     }
-                return! source obv
+                return! AsyncObserver obv |> source.SubscribeAsync
             }
-        subscribe
+        { new IAsyncObservable<'a> with member __.SubscribeAsync o = subscribeAsync o }
 
-    let debounce msecs (source: AsyncObservable<'a>) : AsyncObservable<'a> =
-        let subscribe (aobv: AsyncObserver<'a>) =
+    /// Ignores values from an observable sequence which are followed by
+    /// another value before the given timeout.
+    let debounce msecs (source: IAsyncObservable<'a>) : IAsyncObservable<'a> =
+        let subscribeAsync (aobv: IAsyncObserver<'a>) =
             let safeObserver = safeObserver aobv
             let infinite = Seq.initInfinite (fun index -> index)
 
@@ -47,17 +54,21 @@ module Timeshift =
 
                     let! newIndex = async {
                         match n, index with
-                        | OnNext _, idx when idx = currentIndex ->
-                            do! safeObserver n
+                        | OnNext x, idx when idx = currentIndex ->
+                            do! safeObserver.OnNextAsync x
                             return index
                         | OnNext _, _ ->
                             if index > currentIndex then
                                 return index
                             else
                                 return currentIndex
-                        | _, _ ->
-                            do! safeObserver n
+                        | OnError ex, _ ->
+                            do! safeObserver.OnErrorAsync ex
                             return currentIndex
+                        | OnCompleted, _ ->
+                            do! safeObserver.OnCompletedAsync ()
+                            return currentIndex
+
                     }
                     return! messageLoop newIndex
                 }
@@ -81,13 +92,13 @@ module Timeshift =
 
                         Async.StartImmediate worker
                     }
-                let! dispose = source obv
+                let! dispose = AsyncObserver obv |> source.SubscribeAsync
 
                 let cancel () =
                     async {
-                        do! dispose ()
+                        do! dispose.DisposeAsync ()
                         agent.Post (OnCompleted, 0)
                     }
-                return cancel
+                return AsyncDisposable.Create cancel
             }
-        subscribe
+        { new IAsyncObservable<'a> with member __.SubscribeAsync o = subscribeAsync o }

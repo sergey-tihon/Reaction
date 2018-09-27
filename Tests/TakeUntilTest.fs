@@ -2,6 +2,8 @@ module Tests.TakeUntil
 
 open System.Threading.Tasks
 open Reaction
+open Reaction.AsyncObservable
+open Reaction.Streams
 
 open NUnit.Framework
 open FsUnit
@@ -21,7 +23,7 @@ let ``Test take until empty``() = toTask <| async {
     let obv = TestObserver<int>()
 
     // Act
-    let! sub = zs.SubscribeAsync obv.PostAsync
+    let! sub = zs.SubscribeAsync obv
     do! Async.Sleep 100
     do! obvX.OnNextAsync 1
     do! obvX.OnNextAsync 2

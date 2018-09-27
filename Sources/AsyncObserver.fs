@@ -1,13 +1,11 @@
 namespace Reaction
 
-[<AutoOpen>]
-module AsyncObserver =
-    type AsyncObserver<'a> = AsyncObserver of Types.AsyncObserver<'a> with
-        static member Unwrap (AsyncObserver obv) : Types.AsyncObserver<'a> = obv
+type AsyncObserver<'a> (fn: Notification<'a> -> Async<unit>) =
 
-        member this.OnNextAsync (x: 'a) = AsyncObserver.Unwrap this <| OnNext x
-        member this.OnErrorAsync err = AsyncObserver.Unwrap this <| OnError err
-        member this.OnCompletedAsync () = AsyncObserver.Unwrap this <| OnCompleted
+    interface Types.IAsyncObserver<'a> with
+        member this.OnNextAsync (x: 'a) =  OnNext x |> fn
+        member this.OnErrorAsync err = OnError err |> fn
+        member this.OnCompletedAsync () = OnCompleted |> fn
 
-        member this.PostAsync n = AsyncObserver.Unwrap this n
+    member this.PostAsync n = fn n
 

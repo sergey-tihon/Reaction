@@ -22,7 +22,9 @@ type TestSynchronizationContext () =
     member private this.Ready = ready
 
     interface IReactionTime with
-        member this.Now = now
+        member this.Now =
+            printfn "Now: %A" now
+            now
 
         member this.SleepAsync (msecs: int) =
             //printfn "SleepAsync: %d" msecs
@@ -40,11 +42,7 @@ type TestSynchronizationContext () =
                     this.Delayed <- List.sortBy (fun (x, _, _) -> x) workItem
                 )
 
-                if this.Ready.IsAddingCompleted then
-                    task.SetResult ()
-                else
-                    this.ProcessDelayed ()
-
+                this.ProcessDelayed ()
                 return! Async.AwaitTask task.Task
             }
 
@@ -61,7 +59,8 @@ type TestSynchronizationContext () =
             if this.Ready.Count = 0 then
                 match this.Delayed with
                 | (x, y, z) :: rest ->
-                    this.Ready.Add ((y, z))
+                    //this.Ready.Add ((y, z))
+                    this.Post (y, z)
                     this.Delayed <- rest
                     now <- x
                 | [] -> ()
@@ -87,6 +86,7 @@ type TestSynchronizationContext () =
         let cts = new CancellationTokenSource ()
         let prevCtx = SynchronizationContext.Current
 
+        SynchronizationContext.SetSynchronizationContext this
         do! Async.SwitchToContext this
 
         this.Running <- true
@@ -102,7 +102,7 @@ type TestSynchronizationContext () =
                 printfn "exception-%s" <| exn.ToString()),
             (fun exn ->
                 this.Ready.CompleteAdding ()
-                printfn "cancell-%s" <| exn.ToString()),
+                printfn "cancel-%s" <| exn.ToString()),
                 cts.Token
             )
 
@@ -113,5 +113,6 @@ type TestSynchronizationContext () =
 
         ReactionContext.Reset ()
         this.Running <- false
+        SynchronizationContext.SetSynchronizationContext prevCtx
         do! Async.SwitchToContext prevCtx
 }

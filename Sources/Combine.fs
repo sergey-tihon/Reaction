@@ -1,25 +1,25 @@
 namespace Reaction
 
-open Types
-open Core
+open Reaction.Core
 
 module Combine =
-    // Concatenates an async observable of async observables
-    let concat (sources: seq<AsyncObservable<'a>>) : AsyncObservable<'a> =
-        let subscribe (aobv: AsyncObserver<'a>) =
+    /// Returns an observable sequence that contains the elements of
+    /// each given sequences, in sequential order.
+    let concat (sources: seq<IAsyncObservable<'a>>) : IAsyncObservable<'a> =
+        let subscribeAsync (aobv: IAsyncObserver<'a>) =
             let safeObserver = safeObserver aobv
 
             let innerAgent =
                 MailboxProcessor.Start(fun inbox ->
-                    let rec messageLoop (innerSubscription : AsyncDisposable) = async {
+                    let rec messageLoop (innerSubscription : IAsyncDisposable) = async {
                         let! cmd, replyChannel = inbox.Receive()
 
                         let obv (replyChannel : AsyncReplyChannel<bool>) n =
                             async {
                                 match n with
-                                | OnNext x -> do! OnNext x |> safeObserver
+                                | OnNext x -> do! safeObserver.OnNextAsync x
                                 | OnError err ->
-                                    do! OnError err |> safeObserver
+                                    do! safeObserver.OnErrorAsync err
                                     replyChannel.Reply false
                                 | OnCompleted -> replyChannel.Reply true
                             }
@@ -27,62 +27,75 @@ module Combine =
                         let getInnerSubscription = async {
                             match cmd with
                             | InnerObservable xs ->
-                                return! xs (obv <| replyChannel)
+                                return! AsyncObserver (obv <| replyChannel) |> xs.SubscribeAsync
                             | Dispose ->
-                                do! innerSubscription ()
+                                do! innerSubscription.DisposeAsync ()
                                 replyChannel.Reply true
-                                return disposableEmpty
+                                return AsyncDisposable.Empty
                         }
 
-                        do! innerSubscription ()
+                        do! innerSubscription.DisposeAsync ()
                         let! newInnerSubscription = getInnerSubscription
                         return! messageLoop newInnerSubscription
                     }
 
-                    messageLoop disposableEmpty
+                    messageLoop AsyncDisposable.Empty
                 )
 
             async {
                 for source in sources do
                     do! innerAgent.PostAndAsyncReply(fun replyChannel -> InnerObservable source, replyChannel) |> Async.Ignore
 
-                do! safeObserver OnCompleted
+                do! safeObserver.OnCompletedAsync ()
 
                 let cancel () =
                     async {
                         do! innerAgent.PostAndAsyncReply(fun replyChannel -> Dispose, replyChannel) |> Async.Ignore
                     }
-                return cancel
+                return AsyncDisposable.Create cancel
             }
-        subscribe
+        { new IAsyncObservable<'a> with member __.SubscribeAsync o = subscribeAsync o }
 
-    // Merges an async observable of async observables
-    let mergeInner (source: AsyncObservable<AsyncObservable<'a>>) : AsyncObservable<'a> =
-        let subscribe (aobv: AsyncObserver<'a>) =
+    /// Prepends a sequence of values to an observable sequence.
+    /// Returns the source sequence prepended with the specified values.
+    let inline startWith (items : seq<'a>) (source: IAsyncObservable<'a>) =
+        concat [Create.ofSeq items; source]
+
+
+    /// Merges an observable sequence of observable sequences into an
+    /// observable sequence.
+    let mergeInner (source: IAsyncObservable<IAsyncObservable<'a>>) : IAsyncObservable<'a> =
+        let subscribeAsync (aobv: IAsyncObserver<'a>) =
             let safeObserver = safeObserver aobv
             let refCount = refCountAgent 1 (async {
-                do! safeObserver OnCompleted
+                do! safeObserver.OnCompletedAsync ()
             })
 
             let innerAgent =
-                let obv n =
-                    async {
-                        match n with
-                        | OnCompleted -> refCount.Post Decrease
-                        | _ -> do! safeObserver n
+                let obv = {
+                    new IAsyncObserver<'a> with
+                        member this.OnNextAsync x = async {
+                            do! safeObserver.OnNextAsync x
+                        }
+                        member this.OnErrorAsync err = async {
+                            do! safeObserver.OnErrorAsync err
+                        }
+                        member this.OnCompletedAsync () = async {
+                            refCount.Post Decrease
+                        }
                     }
 
                 MailboxProcessor.Start(fun inbox ->
-                    let rec messageLoop (innerSubscriptions : AsyncDisposable list) = async {
+                    let rec messageLoop (innerSubscriptions : IAsyncDisposable list) = async {
                         let! cmd = inbox.Receive()
                         let getInnerSubscriptions = async {
                             match cmd with
                             | InnerObservable xs ->
-                                let! inner = xs obv
+                                let! inner = xs.SubscribeAsync obv
                                 return inner :: innerSubscriptions
                             | Dispose ->
                                 for dispose in innerSubscriptions do
-                                    do! dispose ()
+                                    do! dispose.DisposeAsync ()
                                 return []
                         }
                         let! newInnerSubscriptions = getInnerSubscriptions
@@ -93,32 +106,43 @@ module Combine =
                 )
 
             async {
-                let obv (ns : Notification<AsyncObservable<'a>>) =
-                    async {
-                        match ns with
-                        | OnNext xs ->
+                let obv ={
+                    new IAsyncObserver<IAsyncObservable<'a>> with
+                        member this.OnNextAsync xs = async {
                             refCount.Post Increase
                             InnerObservable xs |> innerAgent.Post
-                        | OnError e -> do! OnError e |> safeObserver
-                        | OnCompleted -> refCount.Post Decrease
+                        }
+                        member this.OnErrorAsync err = async {
+                            do! safeObserver.OnErrorAsync err
+                        }
+                        member this.OnCompletedAsync () = async {
+                            refCount.Post Decrease
+                        }
                     }
 
-                let! dispose = source obv
+                let! dispose = source.SubscribeAsync obv
                 let cancel () =
                     async {
-                        do! dispose ()
+                        do! dispose.DisposeAsync ()
                         innerAgent.Post Dispose
                     }
-                return cancel
+                return AsyncDisposable.Create cancel
             }
-        subscribe
+        { new IAsyncObservable<'a> with member __.SubscribeAsync o = subscribeAsync o }
+
+    /// Merges an observable sequence with another observable sequences.
+    let inline merge (other : IAsyncObservable<'a>) (source: IAsyncObservable<'a>) : IAsyncObservable<'a> =
+        Create.ofSeq [source; other] |> mergeInner
 
     type Notifications<'a, 'b> =
     | Source of Notification<'a>
     | Other of Notification<'b>
 
-    let combineLatest (other: AsyncObservable<'b>) (source: AsyncObservable<'a>) : AsyncObservable<'a*'b> =
-        let subscribe (aobv: AsyncObserver<'a*'b>) =
+    /// Merges the specified observable sequences into one observable
+    /// sequence by combining elements of the sources into tuples.
+    /// Returns an observable sequence containing the combined results.
+    let combineLatest (other: IAsyncObservable<'b>) (source: IAsyncObservable<'a>) : IAsyncObservable<'a*'b> =
+        let subscribeAsync (aobv: IAsyncObserver<'a*'b>) =
             let safeObserver = safeObserver aobv
 
             let agent = MailboxProcessor.Start(fun inbox ->
@@ -131,10 +155,10 @@ module Combine =
                             | OnNext x ->
                                 return Some x
                             | OnError ex ->
-                                do! OnError ex |> safeObserver
+                                do! safeObserver.OnErrorAsync ex
                                 return None
                             | OnCompleted ->
-                                do! OnCompleted |> safeObserver
+                                do! safeObserver.OnCompletedAsync ()
                                 return None
                         }
 
@@ -149,7 +173,7 @@ module Combine =
                     }
                     let c = source' |> Option.bind (fun a -> other' |> Option.map  (fun b -> a, b))
                     match c with
-                    | Some x -> do! OnNext x |> safeObserver
+                    | Some x -> do! safeObserver.OnNextAsync x
                     | _ -> ()
 
                     return! messageLoop source' other'
@@ -159,15 +183,21 @@ module Combine =
             )
 
             async {
-                let! dispose1 = source (fun (n : Notification<'a>) -> async { Source n |> agent.Post })
-                let! dispose2 = other (fun (n : Notification<'b>) -> async { Other n |> agent.Post })
+                let obvA = AsyncObserver (fun (n : Notification<'a>) -> async { Source n |> agent.Post })
+                let! dispose1 = source.SubscribeAsync obvA
+                let obvB = AsyncObserver  (fun (n : Notification<'b>) -> async { Other n |> agent.Post })
+                let! dispose2 = other.SubscribeAsync obvB
 
-                return compositeDisposable [ dispose1; dispose2 ]
+                return AsyncDisposable.Composite [ dispose1; dispose2 ]
             }
-        subscribe
+        { new IAsyncObservable<'a*'b> with member __.SubscribeAsync o = subscribeAsync o }
 
-    let withLatestFrom (other: AsyncObservable<'b>) (source: AsyncObservable<'a>) : AsyncObservable<'a*'b> =
-        let subscribe (aobv: AsyncObserver<'a*'b>) =
+    /// Merges the specified observable sequences into one observable
+    /// sequence by combining the values into tuples only when the first
+    /// observable sequence produces an element. Returns the combined
+    /// observable sequence.
+    let withLatestFrom (other: IAsyncObservable<'b>) (source: IAsyncObservable<'a>) : IAsyncObservable<'a*'b> =
+        let subscribeAsync (aobv: IAsyncObserver<'a*'b>) =
             let safeObserver = safeObserver aobv
 
             let agent = MailboxProcessor.Start(fun inbox ->
@@ -180,10 +210,10 @@ module Combine =
                             | OnNext x ->
                                 return Some x
                             | OnError ex ->
-                                do! OnError ex |> safeObserver
+                                do! safeObserver.OnErrorAsync ex
                                 return None
                             | OnCompleted ->
-                                do! OnCompleted |> safeObserver
+                                do! safeObserver.OnCompletedAsync ()
                                 return None
                         }
 
@@ -198,7 +228,7 @@ module Combine =
                     }
                     let c = source' |> Option.bind (fun a -> latest' |> Option.map  (fun b -> a, b))
                     match c with
-                    | Some x -> do! OnNext x |> safeObserver
+                    | Some x -> do! safeObserver.OnNextAsync x
                     | _ -> ()
 
                     return! messageLoop latest'
@@ -208,15 +238,18 @@ module Combine =
             )
 
             async {
-                let! dispose1 = other (fun (n : Notification<'b>) -> async { Other n |> agent.Post })
-                let! dispose2 = source (fun (n : Notification<'a>) -> async { Source n |> agent.Post })
+                let obvA = AsyncObserver (fun (n : Notification<'a>) -> async { Source n |> agent.Post })
+                let obvB = AsyncObserver  (fun (n : Notification<'b>) -> async { Other n |> agent.Post })
 
-                return compositeDisposable [ dispose1; dispose2 ]
+                let! dispose1 = other.SubscribeAsync obvB
+                let! dispose2 = source.SubscribeAsync obvA
+
+                return AsyncDisposable.Composite [ dispose1; dispose2 ]
             }
-        subscribe
+        { new IAsyncObservable<'a*'b> with member __.SubscribeAsync o = subscribeAsync o }
 
-    let zipSeq (sequence: seq<'b>) (source: AsyncObservable<'a>) : AsyncObservable<'a*'b> =
-        let subscribe (aobv: AsyncObserver<'a*'b>) =
+    let zipSeq (sequence: seq<'b>) (source: IAsyncObservable<'a>) : IAsyncObservable<'a*'b> =
+        let subscribeAsync (aobv: IAsyncObserver<'a*'b>) =
             async {
                 let enumerator = sequence.GetEnumerator ()
                 let _obv n =
@@ -226,15 +259,15 @@ module Combine =
                             try
                                 if enumerator.MoveNext () then
                                     let b =  x, enumerator.Current
-                                    do! b |> OnNext |> aobv
+                                    do! aobv.OnNextAsync b
                                 else
-                                    do! aobv OnCompleted
+                                    do! aobv.OnCompletedAsync ()
                             with
-                            | ex -> do! OnError ex |> aobv
-                        | OnError ex -> do! OnError ex |> aobv
-                        | OnCompleted -> do! aobv OnCompleted
+                            | ex -> do! aobv.OnErrorAsync ex
+                        | OnError ex -> do! aobv.OnErrorAsync ex
+                        | OnCompleted -> do! aobv.OnCompletedAsync ()
 
                     }
-                return! _obv |> safeObserver |> source
+                return! AsyncObserver _obv |> safeObserver |> source.SubscribeAsync
             }
-        subscribe
+        { new IAsyncObservable<'a*'b> with member __.SubscribeAsync o = subscribeAsync o }

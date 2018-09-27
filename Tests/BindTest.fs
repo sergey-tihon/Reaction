@@ -3,7 +3,7 @@ module Tests.Bind
 open System.Threading.Tasks
 
 open Reaction
-open Reaction.Query
+open Reaction.AsyncObservable
 
 open NUnit.Framework
 open FsUnit
@@ -19,7 +19,7 @@ let ``Test bind empty``() = toTask <| async {
     let obv = TestObserver<int>()
 
     // Act
-    let! sub = zs.SubscribeAsync obv.PostAsync
+    let! sub = zs.SubscribeAsync obv
     try
         do! obv.AwaitIgnore ()
     with
@@ -40,7 +40,7 @@ let ``Test bind some``() = toTask <| async {
     let obv = TestObserver<int>()
 
     // Act
-    let! sub = zs.SubscribeAsync obv.PostAsync
+    let! sub = zs.SubscribeAsync obv
     do! obv.AwaitIgnore ()
 
     // Assert
@@ -133,7 +133,7 @@ let ``Test bind expression some``() = toTask <| async {
     let obv = TestObserver<int>()
 
     // Act
-    let! sub = ys.SubscribeAsync obv.PostAsync
+    let! sub = ys.SubscribeAsync obv
     do! obv.AwaitIgnore ()
 
     // Assert
@@ -154,7 +154,7 @@ let ``Test bind expression some for``() = toTask <| async {
     let obv = TestObserver<int>()
 
     // Act
-    let! sub = ys.SubscribeAsync obv.PostAsync
+    let! sub = ys.SubscribeAsync obv
     do! obv.AwaitIgnore ()
 
     // Assert
@@ -175,7 +175,7 @@ let ``Test bind expression some return bang``() = toTask <| async {
     let obv = TestObserver<int>()
 
     // Act
-    let! sub = ys.SubscribeAsync obv.PostAsync
+    let! sub = ys.SubscribeAsync obv
     do! obv.AwaitIgnore ()
 
     // Assert

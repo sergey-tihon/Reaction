@@ -3,6 +3,7 @@ module Tests.Merge
 open System.Threading.Tasks
 
 open Reaction
+open Reaction.AsyncObservable
 
 open NUnit.Framework
 open FsUnit
@@ -16,12 +17,12 @@ let toTask computation : Task = Async.StartAsTask computation :> _
 let ``Test merge non empty emtpy``() = toTask <| async {
     // Arrange
     let xs = ofSeq <| seq { 1..5 }
-    let ys : AsyncObservable<int> = empty ()
+    let ys = empty<int> ()
     let zs = ofSeq <| [ xs; ys ] |> mergeInner
     let obv = TestObserver<int>()
 
     // Act
-    let! sub = zs.SubscribeAsync obv.PostAsync
+    let! sub = zs.SubscribeAsync obv
     let! latest= obv.Await ()
 
     // Assert
@@ -35,13 +36,13 @@ let ``Test merge non empty emtpy``() = toTask <| async {
 [<Test>]
 let ``Test merge empty non emtpy``() = toTask <| async {
     // Arrange
-    let xs : AsyncObservable<int> = empty ()
+    let xs = empty<int> ()
     let ys = ofSeq <| seq { 1..5 }
     let zs = ofSeq <| [ xs; ys ] |> mergeInner
     let obv = TestObserver<int>()
 
     // Act
-    let! sub = zs.SubscribeAsync obv.PostAsync
+    let! sub = zs.SubscribeAsync obv
     let! latest= obv.Await ()
 
     // Assert
@@ -62,7 +63,7 @@ let ``Test merge error error``() = toTask <| async {
     let obv = TestObserver<int>()
 
     // Act
-    let! sub = zs.SubscribeAsync obv.PostAsync
+    let! sub = zs.SubscribeAsync obv
 
     try
         do! obv.Await () |> Async.Ignore
@@ -85,7 +86,7 @@ let ``Test merge two``() = toTask <| async {
     let obv = TestObserver<int>()
 
     // Act
-    let! sub = zs.SubscribeAsync obv.PostAsync
+    let! sub = zs.SubscribeAsync obv
     do! obv.AwaitIgnore ()
 
     // Assert

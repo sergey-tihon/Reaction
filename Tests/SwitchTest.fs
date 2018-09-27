@@ -2,12 +2,14 @@ module Tests.Switch
 
 open System.Threading.Tasks
 open Reaction
+open Reaction.AsyncObservable
+open Reaction.Streams
 
 open NUnit.Framework
 open FsUnit
 open Tests.Utils
 
-exception  MyError of string
+exception MyError of string
 
 let toTask computation : Task = Async.StartAsTask computation :> _
 
@@ -16,13 +18,13 @@ let ``Test switch2``() = toTask <| async {
     // Arrange
     let obvA, a = stream<int> ()
     let obvB, b = stream<int> ()
-    let obvX, xs = stream<AsyncObservable<int>> ()
+    let obvX, xs = stream<IAsyncObservable<int>> ()
     let ys = xs |> flatMapLatest (fun x -> x)
 
     let obv = TestObserver<int>()
 
     // Act
-    let! sub = ys.SubscribeAsync obv.PostAsync
+    let! sub = ys.SubscribeAsync obv
 
     do! obvX.OnNextAsync a
     do! Async.Sleep 100

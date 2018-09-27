@@ -3,6 +3,7 @@ module Tests.Just
 open System.Threading.Tasks
 
 open Reaction
+open Reaction.AsyncObservable
 
 open NUnit.Framework
 open FsUnit
@@ -13,11 +14,11 @@ let toTask computation : Task = Async.StartAsTask computation :> _
 [<Test>]
 let ``Test single happy``() = toTask <| async {
     // Arrange
-    let xs = single 42
+    let xs = AsyncObservable.single 42
     let obv = TestObserver<int>()
 
     // Act
-    let! dispose = xs.SubscribeAsync obv.PostAsync
+    let! dispose = xs.SubscribeAsync obv
 
     // Assert
     let! latest = obv.Await ()
@@ -31,11 +32,11 @@ let ``Test single happy``() = toTask <| async {
 [<Test>]
 let ``Test just dispose after subscribe``() = toTask <| async {
     // Arrange
-    let xs = single 42
+    let xs = AsyncObservable.single 42
     let obv = TestObserver<int>()
 
     // Act
-    let! subscription = xs.SubscribeAsync obv.PostAsync
+    let! subscription = xs.SubscribeAsync obv
     Async.StartImmediate (subscription.DisposeAsync ())
 
     // Assert
@@ -51,7 +52,7 @@ let ``Test ofSeq empty``() = toTask <| async {
     let obv = TestObserver<int>()
 
     // Act
-    let! dispose = xs.SubscribeAsync obv.PostAsync
+    let! dispose = xs.SubscribeAsync obv
 
     do! obv.AwaitIgnore ()
 
@@ -69,7 +70,7 @@ let ``Test ofSeq non empty``() = toTask <| async {
     let obv = TestObserver<int>()
 
     // Act
-    let! dispose = xs.SubscribeAsync obv.PostAsync
+    let! dispose = xs.SubscribeAsync obv
     do! obv.AwaitIgnore ()
 
     // Assert
@@ -86,7 +87,7 @@ let ``Test ofSeq dispose after subscribe``() = toTask <| async {
     let obv = TestObserver<int>()
 
     // Act
-    let! subscription = xs.SubscribeAsync obv.PostAsync
+    let! subscription = xs.SubscribeAsync obv
     do! subscription.DisposeAsync ()
 
     // Assert

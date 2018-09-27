@@ -7,58 +7,71 @@ open System
 open FSharp.Control
 #endif
 
+open Core
 open Types
 
-module Creation =
+[<RequireQualifiedAccess>]
+module Create =
+    /// Creates an async observable (`AsyncObservable{'a}`) from the
+    /// given subscribe function.
+    let create (subscribe : IAsyncObserver<'a> -> Async<IAsyncDisposable>) : IAsyncObservable<'a> =
+        { new IAsyncObservable<'a> with member __.SubscribeAsync o = subscribe o }
+
     // Create async observable from async worker function
-    let ofAsyncWorker (worker: AsyncObserver<'a> -> CancellationToken -> Async<unit>) : AsyncObservable<_> =
-        let subscribe (aobv : AsyncObserver<_>) : Async<AsyncDisposable> =
-            let cancel, token = Core.canceller ()
-            let obv = Core.safeObserver aobv
+    let ofAsyncWorker (worker: IAsyncObserver<'a> -> CancellationToken -> Async<unit>) : IAsyncObservable<_> =
+        let subscribeAsync (aobv : IAsyncObserver<_>) : Async<IAsyncDisposable> =
+            let disposable, token = canceller ()
+            let obv = safeObserver aobv
 
             async {
                 Async.StartImmediate (worker obv token)
-                return cancel
+                return disposable
             }
-        subscribe
+        { new IAsyncObservable<'a> with member __.SubscribeAsync o = subscribeAsync o }
 
-    let inline ofAsync(workflow : Async<'a>)  : AsyncObservable<'a> =
+    /// Returns the async observable sequence whose single element is
+    /// the result of the given async workflow.
+    let inline ofAsync(workflow : Async<'a>)  : IAsyncObservable<'a> =
         ofAsyncWorker (fun obv _ -> async {
             let! result = workflow
-            do! OnNext result |> obv
-            do! OnCompleted |> obv
+            do! obv.OnNextAsync result
+            do! obv.OnCompletedAsync ()
         })
 
-    // An async observervable that just completes when subscribed.
-    let inline empty () : AsyncObservable<'a> =
+    /// Returns an observable sequence with no elements.
+    let inline empty<'a> () : IAsyncObservable<'a> =
         ofAsyncWorker (fun obv _ -> async {
-            do! OnCompleted |> obv
+            do! obv.OnCompletedAsync ()
         })
 
-    // An async observervable that just fails with an error when subscribed.
-    let inline fail (exn) : AsyncObservable<'a> =
+    /// Returns the observable sequence that terminates exceptionally
+    /// with the specified exception.
+    let inline fail<'a> (exn) : IAsyncObservable<'a> =
         ofAsyncWorker (fun obv _ -> async {
-            do! OnError exn |> obv
+            do! obv.OnErrorAsync exn
         })
 
-    let ofSeq (xs: seq<'a>) : AsyncObservable<'a> =
+    /// Returns the async observable sequence whose elements are pulled
+    /// from the given enumerable sequence.
+    let ofSeq (xs: seq<'a>) : IAsyncObservable<'a> =
         ofAsyncWorker (fun obv token -> async {
             for x in xs do
                 if token.IsCancellationRequested then
                     raise <| OperationCanceledException("Operation cancelled")
 
                 try
-                    do! OnNext x |> obv
+                    do! obv.OnNextAsync x
                 with ex ->
-                    do! OnError ex |> obv
+                    do! obv.OnErrorAsync ex
 
-            do! OnCompleted |> obv
+            do! obv.OnCompletedAsync ()
         })
 
 #if !FABLE_COMPILER
-    let ofAsyncSeq (xs: AsyncSeq<'a>) : AsyncObservable<'a> =
-        let subscribe  (aobv : AsyncObserver<'a>) : Async<AsyncDisposable> =
-            let cancel, token = Core.canceller ()
+    /// Convert async sequence into an async observable.
+    let ofAsyncSeq (xs: AsyncSeq<'a>) : IAsyncObservable<'a> =
+        let subscribeAsync  (aobv : IAsyncObserver<'a>) : Async<IAsyncDisposable> =
+            let cancel, token = canceller ()
             let mutable running = true
 
             async {
@@ -79,24 +92,26 @@ module Creation =
                         | Ok notification ->
                             match notification with
                             | Some x ->
-                                do! OnNext x |> aobv
+                                do! aobv.OnNextAsync x
                                 do! loop ()
                             | None ->
-                                do! OnCompleted |> aobv
+                                do! aobv.OnCompletedAsync ()
                         | Error err ->
-                            do! OnError err |> aobv
+                            do! aobv.OnErrorAsync err
                     }
 
                 Async.StartImmediate (loop (), token)
                 return cancel
             }
-        subscribe
+        { new IAsyncObservable<'a> with member __.SubscribeAsync o = subscribeAsync o }
 #endif
-    let inline single (x : 'a) : AsyncObservable<'a> =
+    /// Returns an observable sequence containing the single specified
+    /// element.
+    let inline single (x : 'a) : IAsyncObservable<'a> =
         ofSeq [ x ]
 
-    let defer (factory: unit -> AsyncObservable<'a>) : AsyncObservable<'a> =
-        let subscribe  (aobv : AsyncObserver<'a>) : Async<AsyncDisposable> =
+    let defer (factory: unit -> IAsyncObservable<'a>) : IAsyncObservable<'a> =
+        let subscribeAsync  (aobv : IAsyncObserver<'a>) : Async<IAsyncDisposable> =
             async {
                 let result =
                     try
@@ -105,26 +120,36 @@ module Creation =
                     | ex ->
                         fail ex
 
-                return! result aobv
+                return! result.SubscribeAsync aobv
             }
-        subscribe
+        { new IAsyncObservable<'a> with member __.SubscribeAsync o = subscribeAsync o }
 
-    let timer (msecs: int) (period: int): AsyncObservable<int> =
-        let subscribe  (aobv : AsyncObserver<int>) : Async<AsyncDisposable> =
-            let cancel, token = Core.canceller ()
+    /// Returns an observable sequence that triggers the increasing
+    /// sequence starting with 0 after the given period.
+    let interval (msecs: int) (period: int): IAsyncObservable<int> =
+        let subscribeAsync  (aobv : IAsyncObserver<int>) : Async<IAsyncDisposable> =
+            let cancel, token = canceller ()
             async {
                 let rec handler msecs next = async {
                     do! Async.Sleep msecs
-                    do! OnNext next |> aobv
+                    do! aobv.OnNextAsync next
 
                     if period > 0 then
                         return! handler period (next + 1)
                     else
-                        do! aobv OnCompleted
+                        do! aobv.OnCompletedAsync ()
                 }
 
                 Async.StartImmediate ((handler msecs 0), token)
                 return cancel
             }
 
-        subscribe
+        { new IAsyncObservable<int> with member __.SubscribeAsync o = subscribeAsync o }
+
+    /// Returns an observable sequence that triggers the value 0
+    /// after the given duetime.
+    let timer dueTime : IAsyncObservable<int> =
+        interval dueTime 0
+
+
+

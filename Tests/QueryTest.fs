@@ -3,6 +3,7 @@ module Tests.Query
 open System.Threading.Tasks
 
 open Reaction
+open Reaction.AsyncObservable
 
 open NUnit.Framework
 open FsUnit
@@ -20,7 +21,7 @@ let ``test empty query`` () = toTask <| async {
     let obv = TestObserver<unit>()
 
     // Act
-    let! dispose = xs.SubscribeAsync obv.PostAsync
+    let! dispose = xs.SubscribeAsync obv
 
     // Assert
     try
@@ -47,7 +48,7 @@ let ``test query let!`` () = toTask <| async {
     }
 
     // Act
-    let! subscription = xs.SubscribeAsync obv.PostAsync
+    let! subscription = xs.SubscribeAsync obv
     let! latest = obv.Await ()
 
     // Assert
@@ -66,7 +67,7 @@ let ``test query yield!`` () = toTask <| async {
     }
 
     // Act
-    let! subscription = xs.SubscribeAsync obv.PostAsync
+    let! subscription = xs.SubscribeAsync obv
     let! latest = obv.Await ()
 
     // Assert
@@ -85,7 +86,7 @@ let ``test query yield`` () = toTask <| async {
     }
 
     // Act
-    let! subscription = xs.SubscribeAsync obv.PostAsync
+    let! subscription = xs.SubscribeAsync obv
     let! latest = obv.Await ()
 
     // Assert
@@ -105,7 +106,7 @@ let ``test query combine`` () = toTask <| async {
     }
 
     // Act
-    let! subscription = xs.SubscribeAsync obv.PostAsync
+    let! subscription = xs.SubscribeAsync obv
     let! latest = obv.Await ()
 
     // Assert
@@ -126,7 +127,7 @@ let ``test query for in observable`` () = toTask <| async {
     }
 
     // Act
-    let! subscription = xs.SubscribeAsync obv.PostAsync
+    let! subscription = xs.SubscribeAsync obv
     let! latest = obv.Await ()
 
     // Assert
@@ -146,7 +147,7 @@ let ``test query for in seq`` () = toTask <| async {
     }
 
     // Act
-    let! subscription = xs.SubscribeAsync obv.PostAsync
+    let! subscription = xs.SubscribeAsync obv
     let! latest = obv.Await ()
 
     // Assert
@@ -166,7 +167,7 @@ let ``test query async`` () = toTask <| async {
     }
 
     // Act
-    let! subscription = xs.SubscribeAsync obv.PostAsync
+    let! subscription = xs.SubscribeAsync obv
     let! latest = obv.Await ()
 
     // Assert

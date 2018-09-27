@@ -7,11 +7,12 @@ open Types
 open Core
 
 module Streams =
-    /// A hot stream that supports multiple subscribers
-    let stream<'a> () : AsyncObserver<'a> * AsyncObservable<'a> =
-        let obvs = new List<AsyncObserver<'a>>()
+    /// A stream is both an observable sequence as well as an observer.
+    /// Each notification is broadcasted to all subscribed observers.
+    let stream<'a> () : IAsyncObserver<'a> * IAsyncObservable<'a> =
+        let obvs = new List<IAsyncObserver<'a>>()
 
-        let subscribe (aobv: AsyncObserver<'a>) : Async<AsyncDisposable> =
+        let subscribeAsync (aobv: IAsyncObserver<'a>) : Async<IAsyncDisposable> =
             let sobv = safeObserver aobv
             obvs.Add sobv
 
@@ -19,7 +20,7 @@ module Streams =
                 let cancel () = async {
                     obvs.Remove sobv |> ignore
                 }
-                return cancel
+                return AsyncDisposable.Create cancel
             }
 
         let obv (n : Notification<'a>) =
@@ -28,21 +29,21 @@ module Streams =
                     match n with
                     | OnNext x ->
                         try
-                            do! OnNext x |> aobv
+                            do! aobv.OnNextAsync x
                         with ex ->
-                            do! OnError ex |> aobv
-                    | OnError e -> do! OnError e |> aobv
-                    | OnCompleted -> do! aobv OnCompleted
+                            do!  aobv.OnErrorAsync ex
+                    | OnError e -> do! aobv.OnErrorAsync e
+                    | OnCompleted -> do! aobv.OnCompletedAsync ()
             }
-
-        obv, subscribe
+        let obs = { new IAsyncObservable<'a> with member __.SubscribeAsync o = subscribeAsync o }
+        AsyncObserver obv :> IAsyncObserver<'a>, obs
 
     /// A cold stream that only supports a single subscriber
-    let singleStream () : AsyncObserver<'a> * AsyncObservable<'a> =
-        let mutable oobv: AsyncObserver<'a> option = None
+    let singleStream () : IAsyncObserver<'a> * IAsyncObservable<'a> =
+        let mutable oobv: IAsyncObserver<'a> option = None
         let waitTokenSource = new CancellationTokenSource ()
 
-        let subscribe (aobv : AsyncObserver<'a>) : Async<AsyncDisposable> =
+        let subscribeAsync (aobv : IAsyncObserver<'a>) : Async<IAsyncDisposable> =
             let sobv = safeObserver aobv
             if Option.isSome oobv then
                 failwith "singleStream: Already subscribed"
@@ -54,7 +55,7 @@ module Streams =
                 let cancel () = async {
                     oobv <- None
                 }
-                return cancel
+                return AsyncDisposable.Create cancel
             }
 
         let obv (n: Notification<'a>) =
@@ -68,20 +69,22 @@ module Streams =
                     match n with
                     | OnNext x ->
                         try
-                            do! OnNext x |> obv
+                            do! obv.OnNextAsync x
                         with ex ->
-                            do! OnError ex |> obv
-                    | OnError e -> do! OnError e |> obv
-                    | OnCompleted -> do! obv OnCompleted
+                            do! obv.OnErrorAsync ex
+                    | OnError e -> do! obv.OnErrorAsync e
+                    | OnCompleted -> do! obv.OnCompletedAsync ()
                 | None ->
                     printfn "No observer for %A" n
                     ()
             }
+        let obs = { new IAsyncObservable<'a> with member __.SubscribeAsync o = subscribeAsync o }
+        AsyncObserver obv :> IAsyncObserver<'a>, obs
 
-        obv, subscribe
-
-    let mbStream<'a> () : MailboxProcessor<'a>*AsyncObservable<'a> =
-        let obvs = new List<AsyncObserver<'a>>()
+    /// A mailbox stream is a subscribable mailbox. Each message is
+    /// broadcasted to all subscribed observers.
+    let mbStream<'a> () : MailboxProcessor<'a>*IAsyncObservable<'a> =
+        let obvs = new List<IAsyncObserver<'a>>()
 
         let mb = MailboxProcessor.Start(fun inbox ->
             let rec messageLoop _ = async {
@@ -89,15 +92,15 @@ module Streams =
 
                 for aobv in obvs do
                     try
-                        do! OnNext msg |> aobv
+                        do! aobv.OnNextAsync msg
                     with ex ->
-                        do! OnError ex |> aobv
+                        do! aobv.OnErrorAsync ex
                 return! messageLoop ()
             }
             messageLoop ()
         )
 
-        let subscribe (aobv: AsyncObserver<'a>) : Async<AsyncDisposable> =
+        let subscribeAsync (aobv: IAsyncObserver<'a>) : Async<IAsyncDisposable> =
             let sobv = safeObserver aobv
             obvs.Add sobv
 
@@ -105,7 +108,7 @@ module Streams =
                 let cancel () = async {
                     obvs.Remove sobv |> ignore
                 }
-                return cancel
+                return AsyncDisposable.Create cancel
             }
-
-        mb, subscribe
+        let obs = { new IAsyncObservable<'a> with member __.SubscribeAsync o = subscribeAsync o }
+        mb, obs

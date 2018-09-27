@@ -3,10 +3,13 @@ namespace Reaction
 #if !FABLE_COMPILER
 open System.Threading
 open FSharp.Control
-open Types
 
+[<RequireQualifiedAccess>]
 module Leave =
-    let toAsyncSeq (source: AsyncObservable<'a>) : AsyncSeq<'a> =
+    /// Convert async observable to async sequence, non-blocking.
+    /// Producer will be awaited until item is consumed by the async
+    /// enumerator.
+    let toAsyncSeq (source: IAsyncObservable<'a>) : AsyncSeq<'a> =
         let ping = new AutoResetEvent false
         let pong = new AutoResetEvent false
         let mutable latest : Notification<'a> = OnCompleted
@@ -19,7 +22,7 @@ module Leave =
             }
 
         asyncSeq {
-            let! dispose = source _obv
+            let! dispose = AsyncObserver _obv |> source.SubscribeAsync
             let mutable running = true
 
             while running do
@@ -34,6 +37,6 @@ module Leave =
                     running <- false
                 pong.Set () |> ignore
 
-            do! dispose ()
+            do! dispose.DisposeAsync ()
         }
 #endif

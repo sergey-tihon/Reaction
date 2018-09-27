@@ -3,6 +3,7 @@ module Tests.Map
 open System.Threading.Tasks
 
 open Reaction
+open Reaction.AsyncObservable
 
 open NUnit.Framework
 open FsUnit
@@ -22,7 +23,7 @@ let ``Test map async``() = toTask <| async {
     let obv = TestObserver<int>()
 
     // Act
-    let! sub = xs.SubscribeAsync obv.PostAsync
+    let! sub = xs.SubscribeAsync obv
     let! latest= obv.Await ()
 
     // Assert
@@ -43,7 +44,7 @@ let ``Test map sync``() = toTask <| async {
     let obv = TestObserver<int>()
 
     // Act
-    let! sub = xs.SubscribeAsync obv.PostAsync
+    let! sub = xs.SubscribeAsync obv
     let! latest= obv.Await ()
 
     // Assert
@@ -69,7 +70,7 @@ let ``Test map mapper throws exception``() = toTask <| async {
     let obv = TestObserver<unit>()
 
     // Act
-    let! cnl = xs.SubscribeAsync obv.PostAsync
+    let! cnl = xs.SubscribeAsync obv
 
     try
         do! obv.AwaitIgnore ()

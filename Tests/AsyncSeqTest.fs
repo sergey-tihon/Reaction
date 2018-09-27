@@ -4,6 +4,7 @@ open System.Collections.Generic
 open System.Threading.Tasks
 
 open Reaction
+open Reaction.AsyncObservable
 
 open NUnit.Framework
 open FsUnit

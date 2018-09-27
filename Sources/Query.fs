@@ -1,20 +1,24 @@
 namespace Reaction
 
 type QueryBuilder() =
-    member this.Zero () : AsyncObservable<_> = empty ()
-    member this.Yield (x: 'a) : AsyncObservable<'a> = single x
-    member this.YieldFrom (xs: AsyncObservable<'a>) : AsyncObservable<'a> = xs
-    member this.Combine (xs: AsyncObservable<'a>, ys: AsyncObservable<'a>) = xs + ys
+    member this.Zero () : IAsyncObservable<_> = Create.empty ()
+    member this.Yield (x: 'a) : IAsyncObservable<'a> = Create.single x
+    member this.YieldFrom (xs: IAsyncObservable<'a>) : IAsyncObservable<'a> = xs
+    member this.Combine (xs: IAsyncObservable<'a>, ys: IAsyncObservable<'a>) = Combine.concat [xs; ys]
     member this.Delay (fn) = fn ()
-    member this.Bind(source: AsyncObservable<'a>, fn: 'a -> AsyncObservable<'b>) : AsyncObservable<'b> = flatMap fn source
-    member x.For(source: AsyncObservable<_>, func) : AsyncObservable<'b> = flatMap func source
+    member this.Bind(source: IAsyncObservable<'a>, fn: 'a -> IAsyncObservable<'b>) : IAsyncObservable<'b> = Transformation.flatMap fn source
+    member x.For(source: IAsyncObservable<_>, func) : IAsyncObservable<'b> = Transformation.flatMap func source
 
     // Async to AsyncObservable conversion
-    member this.Bind (source: Async<'a>, fn: 'a -> AsyncObservable<'b>) = ofAsync source |> flatMap fn
-    member this.YieldFrom (xs: Async<'x>) = ofAsync xs
+    member this.Bind (source: Async<'a>, fn: 'a -> IAsyncObservable<'b>) =
+        Create.ofAsync source
+        |> Transformation.flatMap fn
+    member this.YieldFrom (xs: Async<'x>) = Create.ofAsync xs
 
     // Sequence to AsyncObservable conversion
-    member x.For(source: seq<_>, func) : AsyncObservable<'b> = ofSeq source |> flatMap func
+    member x.For(source: seq<_>, func) : IAsyncObservable<'b> =
+        Create.ofSeq source
+        |> Transformation.flatMap func
 
 [<AutoOpen>]
 module Query =

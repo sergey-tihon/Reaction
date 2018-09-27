@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <PackageId>Reaction</PackageId>
-    <Version>0.11.0</Version>
+    <Version>0.12.3</Version>
     <Authors>Dag Brattli</Authors>
     <Company>Brattli Labs</Company>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
@@ -11,6 +11,8 @@
 
   <ItemGroup>
     <Compile Include="Types.fs" />
+    <Compile Include="AsyncDisposable.fs" />
+    <Compile Include="AsyncObserver.fs" />
     <Compile Include="Core.fs" />
     <Compile Include="Stream.fs" />
     <Compile Include="Create.fs" />
@@ -20,8 +22,6 @@
     <Compile Include="Combine.fs" />
     <Compile Include="Transform.fs" />
     <Compile Include="Timeshift.fs" />
-    <Compile Include="AsyncDisposable.fs" />
-    <Compile Include="AsyncObserver.fs" />
     <Compile Include="AsyncObservable.fs" />
     <Compile Include="Query.fs" />
   </ItemGroup>

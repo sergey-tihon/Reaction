@@ -3,6 +3,7 @@ module Tests.Catch
 open System.Threading.Tasks
 
 open Reaction
+open Reaction.AsyncObservable
 
 open NUnit.Framework
 open FsUnit
@@ -13,13 +14,13 @@ let toTask computation : Task = Async.StartAsTask computation :> _
 [<Test>]
 let ``Test catch no error``() = toTask <| async {
     // Arrange
-    let xs = fromNotification [ OnNext 1; OnNext 2; OnNext 3; OnCompleted]
-    let ys = fromNotification [ OnNext 4; OnNext 5; OnNext 6; OnCompleted]
+    let xs = fromNotification [ OnNext 1; OnNext 2; OnNext 3; OnCompleted ]
+    let ys = fromNotification [ OnNext 4; OnNext 5; OnNext 6; OnCompleted ]
     let zs = xs |> catch (fun _ -> ys)
     let obv = TestObserver<int>()
 
     // Act
-    let! sub = zs.SubscribeAsync obv.PostAsync
+    let! sub = zs.SubscribeAsync obv
     do! obv.AwaitIgnore ()
 
     // Assert
@@ -35,13 +36,13 @@ exception MyError of string
 let ``Test catch error``() = toTask <| async {
     // Arrange
     let error = MyError "error"
-    let xs = fromNotification [ OnNext 1; OnNext 2; OnNext 3; OnError error]
-    let ys = fromNotification [ OnNext 4; OnNext 5; OnNext 6; OnCompleted]
+    let xs = fromNotification [ OnNext 1; OnNext 2; OnNext 3; OnError error ]
+    let ys = fromNotification [ OnNext 4; OnNext 5; OnNext 6; OnCompleted ]
     let zs = xs |> catch (fun _ -> ys)
     let obv = TestObserver<int>()
 
     // Act
-    let! sub = zs.SubscribeAsync obv.PostAsync
+    let! sub = zs.SubscribeAsync obv
     do! obv.AwaitIgnore ()
 
     // Assert
@@ -55,7 +56,7 @@ let ``Test catch error``() = toTask <| async {
 let ``Test catch error exception is propagated``() = toTask <| async {
     // Arrange
     let error = MyError "ing"
-    let xs = fromNotification [ OnNext "test"; OnError error]
+    let xs = fromNotification [ OnNext "test"; OnError error ]
     let zs = xs |> catch (fun err ->
         let msg =
             match err with
@@ -63,10 +64,10 @@ let ``Test catch error exception is propagated``() = toTask <| async {
             | _ -> "error"
 
         single msg)
-    let obv = TestObserver<string>()
+    let obv = TestObserver<string> ()
 
     // Act
-    let! sub = zs.SubscribeAsync obv.PostAsync
+    let! sub = zs.SubscribeAsync obv
     do! obv.AwaitIgnore ()
 
     // Assert
@@ -80,9 +81,9 @@ let ``Test catch error exception is propagated``() = toTask <| async {
 let ``Test catch error twice``() = toTask <| async {
     // Arrange
     let error = MyError "error"
-    let xs = fromNotification [ OnNext 1; OnError error]
-    let ys1 = fromNotification [ OnNext 2; OnError error]
-    let ys2 = fromNotification [ OnNext 3; OnCompleted]
+    let xs = fromNotification [ OnNext 1; OnError error ]
+    let ys1 = fromNotification [ OnNext 2; OnError error ]
+    let ys2 = fromNotification [ OnNext 3; OnCompleted ]
     let iter = [ys1; ys2] |> Seq.ofList |> fun x -> x.GetEnumerator ()
     let zs = xs |> catch (fun _ ->
         iter.MoveNext () |> ignore
@@ -91,7 +92,7 @@ let ``Test catch error twice``() = toTask <| async {
     let obv = TestObserver<int>()
 
     // Act
-    let! sub = zs.SubscribeAsync obv.PostAsync
+    let! sub = zs.SubscribeAsync obv
     do! obv.AwaitIgnore ()
 
     // Assert

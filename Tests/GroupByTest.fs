@@ -2,6 +2,7 @@ module Tests.GroupBy
 
 open System.Threading.Tasks
 open Reaction
+open Reaction.AsyncObservable
 
 open NUnit.Framework
 open FsUnit
@@ -20,7 +21,7 @@ let ``Test groupby empty``() = toTask <| async {
     let obv = TestObserver<int>()
 
     // Act
-    let! sub = xs.SubscribeAsync obv.PostAsync
+    let! sub = xs.SubscribeAsync obv
 
     try
         do! obv.AwaitIgnore ()
@@ -44,7 +45,7 @@ let ``Test groupby error``() = toTask <| async {
     let obv = TestObserver<int>()
 
     // Act
-    let! sub = xs.SubscribeAsync obv.PostAsync
+    let! sub = xs.SubscribeAsync obv
 
     try
         do! obv.AwaitIgnore ()
@@ -67,7 +68,7 @@ let ``Test groupby 2 groups``() = toTask <| async {
     let obv = TestObserver<int>()
 
     // Act
-    let! sub = xs.SubscribeAsync obv.PostAsync
+    let! sub = xs.SubscribeAsync obv
 
     try
         do! obv.AwaitIgnore ()
@@ -90,7 +91,7 @@ let ``Test groupby cancel``() = toTask <| async {
     let obv = TestObserver<int>()
 
     // Act
-    let! sub = xs.SubscribeAsync obv.PostAsync
+    let! sub = xs.SubscribeAsync obv
     do! sub.DisposeAsync ()
 
     // Assert

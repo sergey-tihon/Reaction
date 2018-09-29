@@ -14,7 +14,7 @@ paket add Reaction --project <project>
 
 ## Async Observables
 
-Reaction is an implementation of Async Observable. The difference between an "Async Observable" and an "Observable" is that with "Async Observables" you need to await operations such as Subscribe, OnNext, OnError, OnCompleted. This enables Subscribe to await async operations i.e setup network connections, and observers may finally await side effects such as writing to disk (observers are all about side-effects right?).
+Reaction is an implementation of Async Observable. The difference between an "Async Observable" and an "Observable" is that with "Async Observables" you need to await methods such as `Subscribe`, `OnNext`, `OnError`, and `OnCompleted`. In Reaction they are thus called `SubscribeAsync`, `OnNextAsync`, `OnErrorAsync`, and `OnCompletedAsync`. This enables `SubscribeAsync` to await async operations i.e setup network connections, and observers (`OnNext`) may finally await side effects such as writing to disk (observers are all about side-effects right?).
 
 This diagram shows the how Async Observables relates to other collections and values.
 
@@ -23,25 +23,68 @@ This diagram shows the how Async Observables relates to other collections and va
 | Synchronous pull  | unit -> 'a | [seq<'a>](https://msdn.microsoft.com/en-us/visualfsharpdocs/conceptual/collections.seq-module-%5Bfsharp%5D?f=255&MSPPError=-2147217396) |
 | Synchronous push  |'a -> unit | [Observable<'a>](http://fsprojects.github.io/FSharp.Control.Reactive/tutorial.html) |
 | Asynchronous pull | unit -> [Async<'a>](https://msdn.microsoft.com/en-us/visualfsharpdocs/conceptual/control.async-class-%5Bfsharp%5D) | [AsyncSeq<'a>](http://fsprojects.github.io/FSharp.Control.AsyncSeq/library/AsyncSeq.html) |
-| Asynchronous push |'a -> [Async\<unit\>](https://msdn.microsoft.com/en-us/visualfsharpdocs/conceptual/control.async-class-%5Bfsharp%5D) | **AsyncObservable<'a>** |
+| Asynchronous push |'a -> [Async\<unit\>](https://msdn.microsoft.com/en-us/visualfsharpdocs/conceptual/control.async-class-%5Bfsharp%5D) | **IAsyncObservable<'a>** |
 
-Reaction is built upon simple functions instead of classes and the traditional Rx interfaces. Some of the operators uses mailbox processors (actors) to implement the observer pipeline in order to avoid locks and mutables. This makes the code more Fable friendly. Here are the core types:
+Here are the core interfaces:
+
+```f#
+type IAsyncDisposable =
+    abstract member DisposeAsync: unit -> Async<unit>
+
+type IAsyncObserver<'a> =
+    abstract member OnNextAsync: 'a -> Async<unit>
+    abstract member OnErrorAsync: exn -> Async<unit>
+    abstract member OnCompletedAsync: unit -> Async<unit>
+
+type IIAsyncObservable<'a> =
+    abstract member SubscribeAsync: IAsyncObserver<'a> -> Async<IAsyncDisposable>
+```
+
+This enables a familiar Rx programming syntax, and the relationship between these three interfaces
+can be seen in this single line of code:
+
+```f#
+let! disposableAsync = observable.SubscribeAsync observerAsync
+```
+
+There is also a `SubscribeAsync` overload that takes a notification function so instead of using
+`IAsyncObserver<'a>` instances you may subscribe with a single async function taking a
+`Notification<'a>`.
 
 ```f#
 type Notification<'a> =
     | OnNext of 'a
     | OnError of exn
     | OnCompleted
-
-type AsyncDisposable = unit -> Async<unit>
-type AsyncObserver<'a> = Notification<'a> -> Async<unit>
-type AsyncObservable<'a> = AsyncObserver<'a> -> Async<AsyncDisposable>
 ```
 
-In the API these types have been wrapped in single case union types to enable member methods and a more familiar Rx programming syntax (see usage below).
+Thus observers may be defined either as:
 
 ```f#
-let! disposable = obv.SubscribeAsync obsAsync
+let _obv =
+    { new IAsyncObserver<'a> with
+        member this.OnNextAsync x = async {
+            rintfn "OnNext: %d" x
+        }
+        member this.OnErrorAsync err = async {
+            printfn "OnError: %s" (ex.ToString())
+        }
+        member this.OnCompletedAsync () = async {
+            printfn "OnCompleted"
+        }
+    }
+```
+
+... or using a simple function such as:
+
+```f#
+let obv n =
+    async {
+        match n with
+        | OnNext x -> printfn "OnNext: %d" x
+        | OnError ex -> printfn "OnError: %s" (ex.ToString())
+        | OnCompleted -> printfn "OnCompleted"
+    }
 ```
 
 ## Usage
@@ -53,16 +96,19 @@ let main = async {
     let mapper x =
         x * 10
 
-    let xs = single 42 |> map mapper
+    let xs = IAsyncObservable.single 42
+             |> IAsyncObservable.map mapper
+
     let obv n =
         async {
             match n with
             | OnNext x -> printfn "OnNext: %d" x
-            | OnError ex -> printfn "OnError: %s" ex.ToString()
+            | OnError ex -> printfn "OnError: %s" (ex.ToString())
             | OnCompleted -> printfn "OnCompleted"
         }
 
     let! disposable = xs.SubscribeAsync obv
+    ()
 }
 
 Async.Start main
@@ -76,84 +122,84 @@ and not make this into a full featured [ReactiveX](http://reactivex.io/) impleme
 
 ### Create
 
-Functions for creating (`'a -> AsyncObservable<'a>`) an async observable.
+Functions for creating (`'a -> IAsyncObservable<'a>`) an async observable.
 
-- **empty** : unit -> AsyncObservable<'a>
-- **single** : 'a -> AsyncObservable<'a>
-- **fail** : exn -> AsyncObservable<'a>
-- **defer** : (unit -> AsyncObservable<'a>) -> AsyncObservable<'a>
-- **create** : (AsyncObserver\<'a\> -> Async\<AsyncDisposable\>) -> AsyncObservable<'a>
-- **ofSeq** : seq<'a> -> AsyncObservable<'a>
-- **ofAsyncSeq** : AsyncSeq<'a> -> AsyncObservable<'a> *(Not available in Fable)*
-- **timer** : int -> AsyncObservable\<int\>
-- **interval** int -> AsyncObservable\<int\>
+- **empty** : unit -> IAsyncObservable<'a>
+- **single** : 'a -> IAsyncObservable<'a>
+- **fail** : exn -> IAsyncObservable<'a>
+- **defer** : (unit -> IAsyncObservable<'a>) -> IAsyncObservable<'a>
+- **create** : (AsyncObserver\<'a\> -> Async\<AsyncDisposable\>) -> IAsyncObservable<'a>
+- **ofSeq** : seq<'a> -> IAsyncObservable<'a>
+- **ofAsyncSeq** : AsyncSeq<'a> -> IAsyncObservable<'a> *(Not available in Fable)*
+- **timer** : int -> IAsyncObservable\<int\>
+- **interval** int -> IAsyncObservable\<int\>
 
 ### Transform
 
-Functions for transforming (`AsyncObservable<'a> -> AsyncObservable<'b>`) an async observable.
+Functions for transforming (`IAsyncObservable<'a> -> IAsyncObservable<'b>`) an async observable.
 
-- **map** : ('a -> 'b) -> AsyncObservable<'a> -> AsyncObservable<'b>
-- **mapi** : ('a*int -> 'b) -> AsyncObservable<'a> -> AsyncObservable<'b>
-- **mapAsync** : ('a -> Async<'b>) -> AsyncObservable<'a> -> AsyncObservable<'b>
-- **mapiAsync** : ('a*int -> Async<'b>) -> AsyncObservable<'a> -> AsyncObservable<'b>
-- **flatMap** : ('a -> AsyncObservable<'b>) -> AsyncObservable<'a> -> AsyncObservable<'b>
-- **flatMapi** : ('a*int -> AsyncObservable<'b>) -> AsyncObservable<'a> -> AsyncObservable<'b>
-- **flatMapAsync** : ('a -> Async\<AsyncObservable\<'b\>\>) -> AsyncObservable<'a> -> AsyncObservable<'b>
-- **flatMapiAsync** : ('a*int -> Async\<AsyncObservable\<'b\>\>) -> AsyncObservable<'a> -> AsyncObservable<'b>
-- **flatMapLatest** : ('a -> AsyncObservable<'b>) -> AsyncObservable<'a> -> AsyncObservable<'b>
-- **flatMapLatestAsync** : ('a -> Async\<AsyncObservable\<'b\>\>) -> AsyncObservable<'a> -> AsyncObservable<'b>
-- **catch** : (exn -> AsyncObservable<'a>) -> AsyncObservable<'a> -> AsyncObservable<'a>
+- **map** : ('a -> 'b) -> IAsyncObservable<'a> -> IAsyncObservable<'b>
+- **mapi** : ('a*int -> 'b) -> IAsyncObservable<'a> -> IAsyncObservable<'b>
+- **mapAsync** : ('a -> Async<'b>) -> IAsyncObservable<'a> -> IAsyncObservable<'b>
+- **mapiAsync** : ('a*int -> Async<'b>) -> IAsyncObservable<'a> -> IAsyncObservable<'b>
+- **flatMap** : ('a -> IAsyncObservable<'b>) -> IAsyncObservable<'a> -> IAsyncObservable<'b>
+- **flatMapi** : ('a*int -> IAsyncObservable<'b>) -> IAsyncObservable<'a> -> IAsyncObservable<'b>
+- **flatMapAsync** : ('a -> Async\<IAsyncObservable\<'b\>\>) -> IAsyncObservable<'a> -> IAsyncObservable<'b>
+- **flatMapiAsync** : ('a*int -> Async\<IAsyncObservable\<'b\>\>) -> IAsyncObservable<'a> -> IAsyncObservable<'b>
+- **flatMapLatest** : ('a -> IAsyncObservable<'b>) -> IAsyncObservable<'a> -> IAsyncObservable<'b>
+- **flatMapLatestAsync** : ('a -> Async\<IAsyncObservable\<'b\>\>) -> IAsyncObservable<'a> -> IAsyncObservable<'b>
+- **catch** : (exn -> IAsyncObservable<'a>) -> IAsyncObservable<'a> -> IAsyncObservable<'a>
 
 ### Filter
 
-Functions for filtering (`AsyncObservable<'a> -> AsyncObservable<'a>`) an async observable.
+Functions for filtering (`IAsyncObservable<'a> -> IAsyncObservable<'a>`) an async observable.
 
-- **filter** : ('a -> bool) -> AsyncObservable<'a> -> AsyncObservable<'a>
-- **filterAsync** : ('a -> Async\<bool\>) -> AsyncObservable<'a> -> AsyncObservable<'a>
-- **distinctUntilChanged** : AsyncObservable<'a> -> AsyncObservable<'a>
-- **takeUntil** : AsyncObservable<'b> -> AsyncObservable<'a> -> AsyncObservable<'a>
-- **choose** : ('a -> 'b option) -> AsyncObservable<'a> -> AsyncObservable<'b>
-- **chooseAsync** : ('a -> Async<'b option>) -> AsyncObservable<'a> -> AsyncObservable<'b>
+- **filter** : ('a -> bool) -> IAsyncObservable<'a> -> IAsyncObservable<'a>
+- **filterAsync** : ('a -> Async\<bool\>) -> IAsyncObservable<'a> -> IAsyncObservable<'a>
+- **distinctUntilChanged** : IAsyncObservable<'a> -> IAsyncObservable<'a>
+- **takeUntil** : IAsyncObservable<'b> -> IAsyncObservable<'a> -> IAsyncObservable<'a>
+- **choose** : ('a -> 'b option) -> IAsyncObservable<'a> -> IAsyncObservable<'b>
+- **chooseAsync** : ('a -> Async<'b option>) -> IAsyncObservable<'a> -> IAsyncObservable<'b>
 
 ### Aggregate
 
-- **scan** : 's -> ('s -> 'a -> 's) -> AsyncObservable<'a> -> AsyncObservable<'s>
-- **scanAsync** : 's -> ('s -> 'a -> Async<'s>) -> AsyncObservable<'a> -> AsyncObservable<'s>
-- **groupBy** : ('a -> 'g) -> AsyncObservable<'a> -> AsyncObservable\<AsyncObservable\<'a\>\>
+- **scan** : 's -> ('s -> 'a -> 's) -> IAsyncObservable<'a> -> IAsyncObservable<'s>
+- **scanAsync** : 's -> ('s -> 'a -> Async<'s>) -> IAsyncObservable<'a> -> IAsyncObservable<'s>
+- **groupBy** : ('a -> 'g) -> IAsyncObservable<'a> -> IAsyncObservable\<IAsyncObservable\<'a\>\>
 
 ### Combine
 
 Functions for combining multiple async observables into one.
 
-- **merge** : AsyncObservable<'a> -> AsyncObservable<'a> -> AsyncObservable<'a>
-- **mergeInner** : AsyncObservable<AsyncObservable<'a>> -> AsyncObservable<'a>
-- **switchLatest** : AsyncObservable<AsyncObservable<'a>> -> AsyncObservable<'a>
-- **concat** : seq<AsyncObservable<'a>> -> AsyncObservable<'a>
-- **startWith** : seq<'a> -> AsyncObservable<'a> -> AsyncObservable<'a>
-- **combineLatest** : AsyncObservable<'b> -> AsyncObservable<'a> -> AsyncObservable<'a*'b>
-- **withLatestFrom** : AsyncObservable<'b> -> AsyncObservable<'a> -> AsyncObservable<'a*'b>
-- **zipSeq** : seq<'b> -> AsyncObservable<'a> -> AsyncObservable<'a*'b>
+- **merge** : IAsyncObservable<'a> -> IAsyncObservable<'a> -> IAsyncObservable<'a>
+- **mergeInner** : IAsyncObservable<IAsyncObservable<'a>> -> IAsyncObservable<'a>
+- **switchLatest** : IAsyncObservable<IAsyncObservable<'a>> -> IAsyncObservable<'a>
+- **concat** : seq<IAsyncObservable<'a>> -> IAsyncObservable<'a>
+- **startWith** : seq<'a> -> IAsyncObservable<'a> -> IAsyncObservable<'a>
+- **combineLatest** : IAsyncObservable<'b> -> IAsyncObservable<'a> -> IAsyncObservable<'a*'b>
+- **withLatestFrom** : IAsyncObservable<'b> -> IAsyncObservable<'a> -> IAsyncObservable<'a*'b>
+- **zipSeq** : seq<'b> -> IAsyncObservable<'a> -> IAsyncObservable<'a*'b>
 
 ### Time-shift
 
-Functions for time-shifting (`AsyncObservable<'a> -> AsyncObservable<'a>`) an async observable.
+Functions for time-shifting (`IAsyncObservable<'a> -> IAsyncObservable<'a>`) an async observable.
 
-- **delay** : int -> AsyncObservable<'a> -> AsyncObservable<'a>
-- **debounce** : int -> AsyncObservable<'a> -> AsyncObservable<'a>
+- **delay** : int -> IAsyncObservable<'a> -> IAsyncObservable<'a>
+- **debounce** : int -> IAsyncObservable<'a> -> IAsyncObservable<'a>
 
 ### Leave
 
-Functions for leaving (`AsyncObservable<'a> -> 'a`) the async observable.
+Functions for leaving (`IAsyncObservable<'a> -> 'a`) the async observable.
 
--- **toAsyncSeq** : AsyncObservable<'a> -> AsyncSeq<'a> *(Not available in Fable)*
+-- **toAsyncSeq** : IAsyncObservable<'a> -> AsyncSeq<'a> *(Not available in Fable)*
 
 ### Streams
 
-Functions returning tuples (`AsyncObserver<'a> * AsyncObservable<'a>`) of async observers and async
+Functions returning tuples (`IAsyncObserver<'a> * IAsyncObservable<'a>`) of async observers and async
 observables (aka Subjects in ReactiveX).
 
-- **stream** : unit -> AsyncObserver<'a> * AsyncObservable<'a>
-- **mbStream** : unit -> MailboxProcessor<'a> * AsyncObservable<'a>
+- **stream** : unit -> IAsyncObserver<'a> * IAsyncObservable<'a>
+- **mbStream** : unit -> MailboxProcessor<'a> * IAsyncObservable<'a>
 
 ## Query Builder
 

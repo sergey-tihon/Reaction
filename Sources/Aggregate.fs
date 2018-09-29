@@ -40,7 +40,7 @@ module Aggregatation =
     /// groups, each of which corresponds to a given key.
     let groupBy (keyMapper: 'a -> 'g) (source: IAsyncObservable<'a>) : IAsyncObservable<IAsyncObservable<'a>> =
         let subscribeAsync (aobv: IAsyncObserver<IAsyncObservable<'a>>) =
-            let cancellationSource = new CancellationTokenSource()
+            let cts = new CancellationTokenSource()
             let agent = MailboxProcessor.Start((fun inbox ->
                 let rec messageLoop ((groups, disposed) : Map<'g, IAsyncObserver<'a>>*bool) = async {
                     let! n = inbox.Receive ()
@@ -86,7 +86,7 @@ module Aggregatation =
                     return! messageLoop (newGroups, disposed)
                 }
 
-                messageLoop (Map.empty, false)), cancellationSource.Token)
+                messageLoop (Map.empty, false)), cts.Token)
 
             async {
                 let obv (n : Notification<'a>) =
@@ -96,7 +96,7 @@ module Aggregatation =
                 let! subscription = AsyncObserver obv |> source.SubscribeAsync
                 let cancel () = async {
                     do! subscription.DisposeAsync ()
-                    cancellationSource.Cancel()
+                    cts.Cancel()
                 }
                 return AsyncDisposable.Create cancel
             }

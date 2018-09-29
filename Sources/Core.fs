@@ -8,12 +8,12 @@ module Core =
     let infinite = Seq.initInfinite (fun index -> index)
 
     let canceller () =
-        let cancellationSource = new CancellationTokenSource()
+        let cts = new CancellationTokenSource()
         let cancel () = async {
-            cancellationSource.Cancel ()
+            cts.Cancel ()
         }
         let disposable = { new IAsyncDisposable with member __.DisposeAsync () = cancel () }
-        disposable, cancellationSource.Token
+        disposable, cts.Token
 
     /// Safe observer that wraps the given observer and makes sure that
     /// the Rx grammar (onNext* (onError|onCompleted)?) is not violated.

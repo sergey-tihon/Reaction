@@ -7,5 +7,5 @@ type AsyncObserver<'a> (fn: Notification<'a> -> Async<unit>) =
         member this.OnErrorAsync err = OnError err |> fn
         member this.OnCompletedAsync () = OnCompleted |> fn
 
-    member this.PostAsync n = fn n
-
+    static member Create (cancel) : IAsyncObserver<'a> =
+        AsyncObserver<'a> cancel :> IAsyncObserver<'a>

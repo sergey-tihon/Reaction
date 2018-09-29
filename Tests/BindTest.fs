@@ -62,10 +62,10 @@ let ``Test bind monad law left identity``() = toTask <| async {
     let obv2 = TestObserver<int>()
 
     // Act
-    do! xs.RunAsync obv1.PostAsync
+    do! xs.RunAsync obv1
     let! x = obv1.Await ()
 
-    do! ys.RunAsync obv2.PostAsync
+    do! ys.RunAsync obv2
     let! y = obv2.Await ()
 
     // Assert
@@ -84,10 +84,10 @@ let ``Test bind monad law right identity``() = toTask <| async {
     let obv2 = TestObserver<int>()
 
     // Act
-    do! m.RunAsync obv1.PostAsync
+    do! m.RunAsync obv1
     let! x = obv1.Await ()
 
-    do! xs.RunAsync obv2.PostAsync
+    do! xs.RunAsync obv2
     let! y = obv2.Await ()
 
     // Assert
@@ -111,10 +111,10 @@ let ``Test bind monad law associativity``() = toTask <| async {
     let obv2 = TestObserver<int>()
 
     // Act
-    do! xs.RunAsync obv1.PostAsync
+    do! xs.RunAsync obv1
     let! x = obv1.Await ()
 
-    do! ys.RunAsync obv2.PostAsync
+    do! ys.RunAsync obv2
     let! y = obv2.Await ()
 
     // Assert

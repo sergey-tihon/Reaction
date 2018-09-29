@@ -23,7 +23,7 @@ let ``Test debounce single value``() = toTask <| async {
 
     // Act
     let task = async {
-        let! sub = xs.SubscribeAsync (obv.PostAsync)
+        let! sub = xs.SubscribeAsync obv
         do! dispatch.OnNextAsync 42
         do! ReactionContext.SleepAsync 150
         do! dispatch.OnCompletedAsync ()
@@ -54,7 +54,7 @@ let ``Test debounce two immediate values``() = toTask <| async {
 
     // Act
     let task = async {
-        let! sub = xs.SubscribeAsync obv.PostAsync
+        let! sub = xs.SubscribeAsync obv
         do! dispatch.OnNextAsync 42
         do! dispatch.OnNextAsync 43
         do! ReactionContext.SleepAsync 150
@@ -96,7 +96,7 @@ let ``Test debounce two separate values``() = toTask <| async {
     }
 
     // Act
-    let! sub = xs.SubscribeAsync obv.PostAsync
+    let! sub = xs.SubscribeAsync obv
     do! ctx.RunAsync task
 
     // Assert

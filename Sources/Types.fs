@@ -7,10 +7,6 @@ type Notification<'a> =
 
 [<AutoOpen>]
 module Types =
-    type AsyncDisposableFn = unit -> Async<unit>
-    type AsyncObserverFn<'a> = Notification<'a> -> Async<unit>
-    type AsyncObservableFn<'a> = AsyncObserverFn<'a> -> Async<AsyncDisposableFn>
-
     type Accumulator<'s, 't> = 's -> 't -> 's
 
     type IAsyncDisposable =
@@ -24,6 +20,8 @@ module Types =
     type IAsyncObservable<'a> =
         abstract member SubscribeAsync: IAsyncObserver<'a> -> Async<IAsyncDisposable>
 
+[<AutoOpen>]
+module Commands =
     type RefCountCmd =
         | Increase
         | Decrease

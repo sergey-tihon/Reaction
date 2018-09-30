@@ -28,6 +28,9 @@ module AsyncObservable =
             return disposable
         }
 
+//    let (>>=) (m: IAsyncObservable<'a>) (fn: ('a->IAsyncObservable<'b>)) : IAsyncObservable<'b> =
+//        m |> Transformation.flatMap fn
+
     // Aggregate
     let groupBy = Aggregatation.groupBy
     /// Applies an accumulator function over an observable sequence and
@@ -146,11 +149,11 @@ module AsyncObservable =
 
     /// Ignores values from an observable sequence which are followed by
     /// another value before the given timeout.
-    let debounce = Timeshift.debounce
+    let debounce msecs source = Timeshift.debounce msecs source
 
     /// Time shifts the observable sequence by the given timeout. The
     /// relative time intervals between the values are preserved.
-    let delay = Timeshift.delay
+    let delay msecs source = Timeshift.delay msecs source
 
     // Transform
 
@@ -162,12 +165,12 @@ module AsyncObservable =
     /// Projects each element of an observable sequence into an
     /// observable sequence and merges the resulting observable
     /// sequences back into one observable sequence.
-    let flatMap = Transformation.flatMap
+    let flatMap fn source = Transformation.flatMap fn source
 
     /// Asynchronously projects each element of an observable sequence
     /// into an observable sequence and merges the resulting observable
     /// sequences back into one observable sequence.
-    let flatMapAsync = Transformation.flatMapAsync
+    let flatMapAsync fnAsync source = Transformation.flatMapAsync fnAsync source
 
     /// Projects each element of an observable sequence into an
     /// observable sequence by incorporating the element's
@@ -213,4 +216,3 @@ module AsyncObservable =
     /// an observable sequence producing values only from the most
     /// recent observable sequence.
     let switchLatest = Transformation.switchLatest
-

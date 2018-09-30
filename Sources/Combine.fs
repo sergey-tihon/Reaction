@@ -104,9 +104,8 @@ module Combine =
 
                     messageLoop []
                 )
-
             async {
-                let obv ={
+                let obv = {
                     new IAsyncObserver<IAsyncObservable<'a>> with
                         member this.OnNextAsync xs = async {
                             refCount.Post Increase
@@ -119,7 +118,6 @@ module Combine =
                             refCount.Post Decrease
                         }
                     }
-
                 let! dispose = source.SubscribeAsync obv
                 let cancel () =
                     async {

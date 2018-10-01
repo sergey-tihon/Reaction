@@ -32,6 +32,7 @@ module Combine =
                                 do! innerSubscription.DisposeAsync ()
                                 replyChannel.Reply true
                                 return AsyncDisposable.Empty
+                            | _ -> return AsyncDisposable.Empty
                         }
 
                         do! innerSubscription.DisposeAsync ()
@@ -60,7 +61,6 @@ module Combine =
     /// Returns the source sequence prepended with the specified values.
     let inline startWith (items : seq<'a>) (source: IAsyncObservable<'a>) =
         concat [Create.ofSeq items; source]
-
 
     /// Merges an observable sequence of observable sequences into an
     /// observable sequence.
@@ -97,6 +97,7 @@ module Combine =
                                 for dispose in innerSubscriptions do
                                     do! dispose.DisposeAsync ()
                                 return []
+                            | _ -> return innerSubscriptions
                         }
                         let! newInnerSubscriptions = getInnerSubscriptions
                         return! messageLoop newInnerSubscriptions

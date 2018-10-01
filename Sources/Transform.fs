@@ -85,12 +85,8 @@ module Transformation =
     let switchLatest (source: IAsyncObservable<IAsyncObservable<'a>>) : IAsyncObservable<'a> =
         let subscribeAsync (aobv : IAsyncObserver<'a>) =
             let safeObserver = safeObserver aobv
-            let refCount = refCountAgent 2 (async { // 2 = Main observable + dispsableEmpty.
-                do! safeObserver.OnCompletedAsync ()
-            })
-
             let innerAgent =
-                let obv = {
+                let obv (mb: MailboxProcessor<InnerSubscriptionCmd<'a>>) (id: int) = {
                     new IAsyncObserver<'a> with
                         member this.OnNextAsync x = async {
                             do! safeObserver.OnNextAsync x
@@ -99,40 +95,51 @@ module Transformation =
                             do! safeObserver.OnErrorAsync err
                         }
                         member this.OnCompletedAsync () = async {
-                            refCount.Post Decrease
+                            mb.Post (InnerCompleted id)
                         }
                     }
 
                 MailboxProcessor.Start(fun inbox ->
-                    let rec messageLoop (current: IAsyncDisposable) = async {
+                    let rec messageLoop (current: IAsyncDisposable option, isStopped, currentId) = async {
                         let! cmd = inbox.Receive()
-                        let getCurrent = async {
+
+                        let! (current', isStopped', currentId') = async {
                             match cmd with
                             | InnerObservable xs ->
-                                do! current.DisposeAsync ()
-                                refCount.Post Decrease
-                                let! inner = xs.SubscribeAsync obv
-                                return inner
+                                let nextId = currentId + 1
+                                if current.IsSome then
+                                    do! current.Value.DisposeAsync ()
+                                let! inner = xs.SubscribeAsync (obv inbox nextId)
+                                return Some inner, isStopped, nextId
+                            | InnerCompleted idx ->
+                                if isStopped && idx = currentId then
+                                    do! safeObserver.OnCompletedAsync ()
+                                    return (None, true, currentId)
+                                else
+                                    return (current, isStopped, currentId)
+                            | Completed ->
+                                if current.IsNone then
+                                    do! safeObserver.OnCompletedAsync ()
+                                return (current, true, currentId)
                             | Dispose ->
-                                do! current.DisposeAsync ()
-                                return AsyncDisposable.Empty
+                                if current.IsSome then
+                                    do! current.Value.DisposeAsync ()
+                                return (None, true, currentId)
                         }
-                        let! current' = getCurrent
-                        return! messageLoop current'
+
+                        return! messageLoop (current', isStopped', currentId')
                     }
 
-                    messageLoop AsyncDisposable.Empty
+                    messageLoop (None, false, 0)
                 )
 
             async {
                 let obv (ns: Notification<IAsyncObservable<'a>>) =
                     async {
                         match ns with
-                        | OnNext xs ->
-                            refCount.Post Increase
-                            InnerObservable xs |> innerAgent.Post
+                        | OnNext xs -> InnerObservable xs |> innerAgent.Post
                         | OnError e -> do! safeObserver.OnErrorAsync e
-                        | OnCompleted -> refCount.Post Decrease
+                        | OnCompleted -> innerAgent.Post Completed
                     }
 
                 let! dispose = AsyncObserver obv |> source.SubscribeAsync

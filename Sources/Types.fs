@@ -28,5 +28,7 @@ module Commands =
 
     type InnerSubscriptionCmd<'a> =
         | InnerObservable of IAsyncObservable<'a>
+        | InnerCompleted of int
+        | Completed
         | Dispose
 

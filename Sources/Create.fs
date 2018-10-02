@@ -126,7 +126,7 @@ module Create =
 
     /// Returns an observable sequence that triggers the increasing
     /// sequence starting with 0 after the given period.
-    let interval (msecs: int) (period: int): IAsyncObservable<int> =
+    let interval (msecs: int) (period: int) : IAsyncObservable<int> =
         let subscribeAsync  (aobv : IAsyncObserver<int>) : Async<IAsyncDisposable> =
             let cancel, token = canceller ()
             async {

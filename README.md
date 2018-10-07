@@ -96,8 +96,8 @@ let main = async {
     let mapper x =
         x * 10
 
-    let xs = IAsyncObservable.single 42
-             |> IAsyncObservable.map mapper
+    let xs = AsyncObservable.single 42
+             |> AsyncObservable.map mapper
 
     let obv n =
         async {

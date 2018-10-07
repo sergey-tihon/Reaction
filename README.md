@@ -36,7 +36,7 @@ type IAsyncObserver<'a> =
     abstract member OnErrorAsync: exn -> Async<unit>
     abstract member OnCompletedAsync: unit -> Async<unit>
 
-type IIAsyncObservable<'a> =
+type IAsyncObservable<'a> =
     abstract member SubscribeAsync: IAsyncObserver<'a> -> Async<IAsyncDisposable>
 ```
 

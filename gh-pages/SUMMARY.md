@@ -9,7 +9,7 @@
 * [Observables](pages/Observables.md)
 * [Streams](pages/Streams.md)
 * [Operators](pages/Operators.md)
-* [Disposables](pages/Operators.md)
+* [Disposables](pages/Disposables.md)
 * [Query Builder](pages/Query.md)
 * [Error Handling](pages/Error.md)
 

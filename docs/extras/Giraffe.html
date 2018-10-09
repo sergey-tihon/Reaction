@@ -191,9 +191,9 @@
             
         </li>
     
-        <li class="chapter " data-level="1.9" data-path="../pages/Operators.html">
+        <li class="chapter " data-level="1.9" data-path="../pages/Disposables.html">
             
-                <a href="../pages/Operators.html">
+                <a href="../pages/Disposables.html">
             
                     
                     Disposables
@@ -295,7 +295,65 @@
     
                                 <section class="normal markdown-section">
                                 
-                                <h1 id="giraffe">Giraffe</h1>
+                                <h1 id="giraffe-reactionmiddleware">Giraffe ReactionMiddleWare</h1>
+<p>The Reaction Middleware for Giraffe is an experimental support for server side WebSocket message handling.</p>
+<h2 id="install">Install</h2>
+<p>``sh</p>
+<blockquote>
+<p>paket add Reaction.Giraffe --project <project>
+``</project></p>
+</blockquote>
+<h2 id="getting-started">Getting Started</h2>
+<p>You add the Reaction middleware to Giraffe using the <code>UseReaction&lt;&apos;msg&gt;</code> method on the <code>IApplicationBuilder</code> in the <code>configureApp</code> function of the Giraffe setup.</p>
+<pre><code class="lang-fs"><span class="hljs-keyword">let</span> query (connectionId: ConnectionId) (msgs: IAsyncObservable&lt;Msg*ConnectionId&gt;) : IAsyncObservable&lt;Msg*ConnectionId&gt; =
+    msgs
+    |&gt; filter (<span class="hljs-keyword">fun</span> (msg, cId) -&gt; cId = connectionId)
+
+<span class="hljs-keyword">let</span> configureApp (app : IApplicationBuilder) =
+    app.UseWebSockets()
+       .UseReaction&lt;Msg&gt;(<span class="hljs-keyword">fun</span> options -&gt;
+       { options <span class="hljs-keyword">with</span>
+           Query = query
+           Encode = Msg.Encode
+           Decode = Msg.Decode
+       })
+       .UseDefaultFiles()
+       .UseStaticFiles()
+       .UseGiraffe webApp
+</code></pre>
+<h2 id="options">Options</h2>
+<p>Options may be overrided by <code>UseReaction</code>.</p>
+<pre><code class="lang-fs"><span class="hljs-meta">[&lt;CLIMutable&gt;]</span>
+<span class="hljs-class"><span class="hljs-keyword">type</span> <span class="hljs-title">ReactionConfig</span>&lt;<span class="hljs-title">&apos;msg</span>&gt; </span>=
+    {
+        QueryAll: IAsyncObservable&lt;&apos;msg*ConnectionId&gt; -&gt; IAsyncObservable&lt;&apos;msg*ConnectionId&gt;
+        Query: ConnectionId -&gt; IAsyncObservable&lt;&apos;msg*ConnectionId&gt; -&gt; IAsyncObservable&lt;&apos;msg*ConnectionId&gt;
+        Encode: &apos;msg -&gt; string
+        Decode: string -&gt; &apos;msg option
+        RequestPath: string
+    }
+</code></pre>
+<h3 id="query">Query</h3>
+<p>A query for the stream of messages to a given client. The type of the query is <code>ConnectionId -&gt; IAsyncObservable&lt;&apos;msg*ConnectionId&gt; -&gt; IAsyncObservable&lt;&apos;msg*ConnectionId&gt;</code>.</p>
+<p>The <code>query</code> function takes a <code>connectionId</code> and an <code>AsyncObservable&lt;&apos;msg*ConnectionId&gt;</code>. The <code>connectionId</code> is the id for a particualar clients connection. Messages that leaves in the returned observable will only go to that particular client. Notifications will be a tuple <code>&apos;msg*ConnectionId</code> where <code>&apos;msg</code> is the message being handled and the <code>connectionId</code> is the client connection where this message was received.</p>
+<p>Thus this query will only send messages back to the same client that sent them. Messages for other clients will be filtered.</p>
+<pre><code class="lang-fs"><span class="hljs-keyword">let</span> query (connectionId: ConnectionId) (msgs: IAsyncObservable&lt;Msg*ConnectionId&gt;) : IAsyncObservable&lt;Msg*ConnectionId&gt; =
+    msgs
+    |&gt; filter (<span class="hljs-keyword">fun</span> (msg, cId) -&gt; cId = connectionId)
+</code></pre>
+<p>This query will only send back messages from other clients. Messages that the client sent itself will be filtered.</p>
+<pre><code class="lang-fs"><span class="hljs-keyword">let</span> query (connectionId: ConnectionId) (msgs: IAsyncObservable&lt;Msg*ConnectionId&gt;) : IAsyncObservable&lt;Msg*ConnectionId&gt; =
+    msgs
+    |&gt; filter (<span class="hljs-keyword">fun</span> (msg, cId) -&gt; cId &lt;&gt; connectionId)
+</code></pre>
+<h3 id="queryall">QueryAll</h3>
+<p>This query is of type <code>IAsyncObservable&lt;&apos;msg*ConnectionId&gt; -&gt; IAsyncObservable&lt;&apos;msg*ConnectionId&gt;</code> and is a query for the single stream of all messages to and from all clients. This query is processed first, and enables us to send messages that needs to be received by all clients. Thus we may produce messages out of thin air (timers etc) and send them to all connected clients.</p>
+<h3 id="encode">Encode</h3>
+<p>Encoder for serializing a message to JSON string. The type of encoder is <code>&apos;msg -&gt; string</code>.</p>
+<h3 id="decode">Decode</h3>
+<p>Decoder for deserializing a JSON string to a message. The type of decoder is <code>string -&gt; &apos;msg option</code>.</p>
+<h3 id="requestpath">RequestPath</h3>
+<p>Request path where the server will liste for websocket requests. Default is <code>/ws</code>. You will usually not need to change this.</p>
 
                                 
                                 </section>
@@ -335,7 +393,7 @@
     <script>
         var gitbook = gitbook || [];
         gitbook.push(function() {
-            gitbook.page.hasChanged({"page":{"title":"Giraffe","level":"2.1","depth":1,"previous":{"title":"Error Handling","level":"1.11","depth":1,"path":"pages/Error.md","ref":"pages/Error.md","articles":[]},"dir":"ltr"},"config":{"gitbook":"*","theme":"default","variables":{},"plugins":[],"pluginsConfig":{"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"}},"file":{"path":"extras/Giraffe.md","mtime":"2018-10-09T18:22:08.635Z","type":"markdown"},"gitbook":{"version":"3.2.3","time":"2018-10-09T19:18:31.498Z"},"basePath":"..","book":{"language":""}});
+            gitbook.page.hasChanged({"page":{"title":"Giraffe","level":"2.1","depth":1,"previous":{"title":"Error Handling","level":"1.11","depth":1,"path":"pages/Error.md","ref":"pages/Error.md","articles":[]},"dir":"ltr"},"config":{"gitbook":"*","theme":"default","variables":{},"plugins":[],"pluginsConfig":{"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"}},"file":{"path":"extras/Giraffe.md","mtime":"2018-10-09T20:08:42.582Z","type":"markdown"},"gitbook":{"version":"3.2.3","time":"2018-10-09T20:10:11.998Z"},"basePath":"..","book":{"language":""}});
         });
     </script>
 </div>

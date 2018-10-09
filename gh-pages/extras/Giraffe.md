@@ -1,4 +1,4 @@
-# Giraffe Reaction MiddleWare
+# Giraffe Reaction Middleware
 
 The Reaction Middleware for Giraffe is an experimental support for server side WebSocket message handling.
 

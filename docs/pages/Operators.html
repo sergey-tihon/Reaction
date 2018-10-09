@@ -244,7 +244,7 @@
                 <a href="../extras/Giraffe.html">
             
                     
-                    Giraffe
+                    Giraffe Middleware
             
                 </a>
             
@@ -298,6 +298,74 @@
                                 <section class="normal markdown-section">
                                 
                                 <h1 id="operators">Operators</h1>
+<p>The following parameterized async observerable returning functions (operators) are
+currently supported. Other operators may be implemented on-demand, but the goal is to keep it simple
+and not make this into a full featured <a href="http://reactivex.io/" target="_blank">ReactiveX</a> implementation (if possible).</p>
+<h2 id="create">Create</h2>
+<p>Functions for creating (<code>&apos;a -&gt; IAsyncObservable&lt;&apos;a&gt;</code>) an async observable.</p>
+<ul>
+<li><strong>empty</strong> : unit -&gt; IAsyncObservable&lt;&apos;a&gt;</li>
+<li><strong>single</strong> : &apos;a -&gt; IAsyncObservable&lt;&apos;a&gt;</li>
+<li><strong>fail</strong> : exn -&gt; IAsyncObservable&lt;&apos;a&gt;</li>
+<li><strong>defer</strong> : (unit -&gt; IAsyncObservable&lt;&apos;a&gt;) -&gt; IAsyncObservable&lt;&apos;a&gt;</li>
+<li><strong>create</strong> : (AsyncObserver\&lt;&apos;a&gt; -&gt; Async\<asyncdisposable\>) -&gt; IAsyncObservable&lt;&apos;a&gt;</asyncdisposable\></li>
+<li><strong>ofSeq</strong> : seq&lt;&apos;a&gt; -&gt; IAsyncObservable&lt;&apos;a&gt;</li>
+<li><strong>ofAsyncSeq</strong> : AsyncSeq&lt;&apos;a&gt; -&gt; IAsyncObservable&lt;&apos;a&gt; <em>(Not available in Fable)</em></li>
+<li><strong>timer</strong> : int -&gt; IAsyncObservable\<int\></int\></li>
+<li><strong>interval</strong> int -&gt; IAsyncObservable\<int\></int\></li>
+</ul>
+<h2 id="transform">Transform</h2>
+<p>Functions for transforming (<code>IAsyncObservable&lt;&apos;a&gt; -&gt; IAsyncObservable&lt;&apos;b&gt;</code>) an async observable.</p>
+<ul>
+<li><strong>map</strong> : (&apos;a -&gt; &apos;b) -&gt; IAsyncObservable&lt;&apos;a&gt; -&gt; IAsyncObservable&lt;&apos;b&gt;</li>
+<li><strong>mapi</strong> : (&apos;a*int -&gt; &apos;b) -&gt; IAsyncObservable&lt;&apos;a&gt; -&gt; IAsyncObservable&lt;&apos;b&gt;</li>
+<li><strong>mapAsync</strong> : (&apos;a -&gt; Async&lt;&apos;b&gt;) -&gt; IAsyncObservable&lt;&apos;a&gt; -&gt; IAsyncObservable&lt;&apos;b&gt;</li>
+<li><strong>mapiAsync</strong> : (&apos;a*int -&gt; Async&lt;&apos;b&gt;) -&gt; IAsyncObservable&lt;&apos;a&gt; -&gt; IAsyncObservable&lt;&apos;b&gt;</li>
+<li><strong>flatMap</strong> : (&apos;a -&gt; IAsyncObservable&lt;&apos;b&gt;) -&gt; IAsyncObservable&lt;&apos;a&gt; -&gt; IAsyncObservable&lt;&apos;b&gt;</li>
+<li><strong>flatMapi</strong> : (&apos;a*int -&gt; IAsyncObservable&lt;&apos;b&gt;) -&gt; IAsyncObservable&lt;&apos;a&gt; -&gt; IAsyncObservable&lt;&apos;b&gt;</li>
+<li><strong>flatMapAsync</strong> : (&apos;a -&gt; Async\<iasyncobservable\<'b\>\&gt;) -&gt; IAsyncObservable<'a> -&gt; IAsyncObservable&lt;&apos;b&gt;</'a></iasyncobservable\<'b\></li>
+<li><strong>flatMapiAsync</strong> : (&apos;a*int -&gt; Async\<iasyncobservable\<'b\>\&gt;) -&gt; IAsyncObservable<'a> -&gt; IAsyncObservable&lt;&apos;b&gt;</'a></iasyncobservable\<'b\></li>
+<li><strong>flatMapLatest</strong> : (&apos;a -&gt; IAsyncObservable&lt;&apos;b&gt;) -&gt; IAsyncObservable&lt;&apos;a&gt; -&gt; IAsyncObservable&lt;&apos;b&gt;</li>
+<li><strong>flatMapLatestAsync</strong> : (&apos;a -&gt; Async\<iasyncobservable\<'b\>\&gt;) -&gt; IAsyncObservable<'a> -&gt; IAsyncObservable&lt;&apos;b&gt;</'a></iasyncobservable\<'b\></li>
+<li><strong>catch</strong> : (exn -&gt; IAsyncObservable&lt;&apos;a&gt;) -&gt; IAsyncObservable&lt;&apos;a&gt; -&gt; IAsyncObservable&lt;&apos;a&gt;</li>
+</ul>
+<h2 id="filter">Filter</h2>
+<p>Functions for filtering (<code>IAsyncObservable&lt;&apos;a&gt; -&gt; IAsyncObservable&lt;&apos;a&gt;</code>) an async observable.</p>
+<ul>
+<li><strong>filter</strong> : (&apos;a -&gt; bool) -&gt; IAsyncObservable&lt;&apos;a&gt; -&gt; IAsyncObservable&lt;&apos;a&gt;</li>
+<li><strong>filterAsync</strong> : (&apos;a -&gt; Async\<bool\>) -&gt; IAsyncObservable&lt;&apos;a&gt; -&gt; IAsyncObservable&lt;&apos;a&gt;</bool\></li>
+<li><strong>distinctUntilChanged</strong> : IAsyncObservable&lt;&apos;a&gt; -&gt; IAsyncObservable&lt;&apos;a&gt;</li>
+<li><strong>takeUntil</strong> : IAsyncObservable&lt;&apos;b&gt; -&gt; IAsyncObservable&lt;&apos;a&gt; -&gt; IAsyncObservable&lt;&apos;a&gt;</li>
+<li><strong>choose</strong> : (&apos;a -&gt; &apos;b option) -&gt; IAsyncObservable&lt;&apos;a&gt; -&gt; IAsyncObservable&lt;&apos;b&gt;</li>
+<li><strong>chooseAsync</strong> : (&apos;a -&gt; Async&lt;&apos;b option&gt;) -&gt; IAsyncObservable&lt;&apos;a&gt; -&gt; IAsyncObservable&lt;&apos;b&gt;</li>
+</ul>
+<h2 id="aggregate">Aggregate</h2>
+<ul>
+<li><strong>scan</strong> : &apos;s -&gt; (&apos;s -&gt; &apos;a -&gt; &apos;s) -&gt; IAsyncObservable&lt;&apos;a&gt; -&gt; IAsyncObservable&lt;&apos;s&gt;</li>
+<li><strong>scanAsync</strong> : &apos;s -&gt; (&apos;s -&gt; &apos;a -&gt; Async&lt;&apos;s&gt;) -&gt; IAsyncObservable&lt;&apos;a&gt; -&gt; IAsyncObservable&lt;&apos;s&gt;</li>
+<li><strong>groupBy</strong> : (&apos;a -&gt; &apos;g) -&gt; IAsyncObservable&lt;&apos;a&gt; -&gt; IAsyncObservable\&lt;IAsyncObservable\&lt;&apos;a&gt;&gt;</li>
+</ul>
+<h2 id="combine">Combine</h2>
+<p>Functions for combining multiple async observables into one.</p>
+<ul>
+<li><strong>merge</strong> : IAsyncObservable&lt;&apos;a&gt; -&gt; IAsyncObservable&lt;&apos;a&gt; -&gt; IAsyncObservable&lt;&apos;a&gt;</li>
+<li><strong>mergeInner</strong> : IAsyncObservable<iasyncobservable<'a>&gt; -&gt; IAsyncObservable<'a></'a></iasyncobservable<'a></li>
+<li><strong>switchLatest</strong> : IAsyncObservable<iasyncobservable<'a>&gt; -&gt; IAsyncObservable<'a></'a></iasyncobservable<'a></li>
+<li><strong>concat</strong> : seq<iasyncobservable<'a>&gt; -&gt; IAsyncObservable<'a></'a></iasyncobservable<'a></li>
+<li><strong>startWith</strong> : seq&lt;&apos;a&gt; -&gt; IAsyncObservable&lt;&apos;a&gt; -&gt; IAsyncObservable&lt;&apos;a&gt;</li>
+<li><strong>combineLatest</strong> : IAsyncObservable&lt;&apos;b&gt; -&gt; IAsyncObservable&lt;&apos;a&gt; -&gt; IAsyncObservable&lt;&apos;a*&apos;b&gt;</li>
+<li><strong>withLatestFrom</strong> : IAsyncObservable&lt;&apos;b&gt; -&gt; IAsyncObservable&lt;&apos;a&gt; -&gt; IAsyncObservable&lt;&apos;a*&apos;b&gt;</li>
+<li><strong>zipSeq</strong> : seq&lt;&apos;b&gt; -&gt; IAsyncObservable&lt;&apos;a&gt; -&gt; IAsyncObservable&lt;&apos;a*&apos;b&gt;</li>
+</ul>
+<h2 id="time-shift">Time-shift</h2>
+<p>Functions for time-shifting (<code>IAsyncObservable&lt;&apos;a&gt; -&gt; IAsyncObservable&lt;&apos;a&gt;</code>) an async observable.</p>
+<ul>
+<li><strong>delay</strong> : int -&gt; IAsyncObservable&lt;&apos;a&gt; -&gt; IAsyncObservable&lt;&apos;a&gt;</li>
+<li><strong>debounce</strong> : int -&gt; IAsyncObservable&lt;&apos;a&gt; -&gt; IAsyncObservable&lt;&apos;a&gt;</li>
+</ul>
+<h2 id="leave">Leave</h2>
+<p>Functions for leaving (<code>IAsyncObservable&lt;&apos;a&gt; -&gt; &apos;a</code>) the async observable.</p>
+<p>-- <strong>toAsyncSeq</strong> : IAsyncObservable&lt;&apos;a&gt; -&gt; AsyncSeq&lt;&apos;a&gt; <em>(Not available in Fable)</em></p>
 
                                 
                                 </section>
@@ -341,7 +409,7 @@
     <script>
         var gitbook = gitbook || [];
         gitbook.push(function() {
-            gitbook.page.hasChanged({"page":{"title":"Operators","level":"1.8","depth":1,"next":{"title":"Disposables","level":"1.9","depth":1,"path":"pages/Disposables.md","ref":"pages/Disposables.md","articles":[]},"previous":{"title":"Streams","level":"1.7","depth":1,"path":"pages/Streams.md","ref":"pages/Streams.md","articles":[]},"dir":"ltr"},"config":{"gitbook":"*","theme":"default","variables":{},"plugins":[],"pluginsConfig":{"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"}},"file":{"path":"pages/Operators.md","mtime":"2018-10-09T18:18:47.782Z","type":"markdown"},"gitbook":{"version":"3.2.3","time":"2018-10-09T20:47:50.838Z"},"basePath":"..","book":{"language":""}});
+            gitbook.page.hasChanged({"page":{"title":"Operators","level":"1.8","depth":1,"next":{"title":"Disposables","level":"1.9","depth":1,"path":"pages/Disposables.md","ref":"pages/Disposables.md","articles":[]},"previous":{"title":"Streams","level":"1.7","depth":1,"path":"pages/Streams.md","ref":"pages/Streams.md","articles":[]},"dir":"ltr"},"config":{"gitbook":"*","theme":"default","variables":{},"plugins":[],"pluginsConfig":{"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"}},"file":{"path":"pages/Operators.md","mtime":"2018-10-09T21:18:54.590Z","type":"markdown"},"gitbook":{"version":"3.2.3","time":"2018-10-09T21:20:52.834Z"},"basePath":"..","book":{"language":""}});
         });
     </script>
 </div>

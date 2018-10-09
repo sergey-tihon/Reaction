@@ -17,4 +17,4 @@
 
 ## Extras
 
-* [Giraffe](extras/Giraffe.md)
+* [Giraffe Middleware](extras/Giraffe.md)

@@ -6,6 +6,10 @@ Reaction is an F# implementation of Async Observables ([ReactiveX](http://reacti
 
 See [Fable Reaction](https://github.com/dbrattli/Fable.Reaction) for Elmish-ish use of Reaction.
 
+## Documentation
+
+Reaction [documentation](https://dbrattli.github.io/Reaction/) (work in progress)
+
 ## Install
 
 ```cmd
@@ -201,29 +205,3 @@ observables (aka Subjects in ReactiveX).
 - **stream** : unit -> IAsyncObserver<'a> * IAsyncObservable<'a>
 - **mbStream** : unit -> MailboxProcessor<'a> * IAsyncObservable<'a>
 
-## Query Builder
-
-Queries may be written by composing functions or using query expressions. Thus the two examples below are equivalent:
-
-```f#
-Seq.toList "TIME FLIES LIKE AN ARROW"
-|> Seq.mapi (fun i c -> i, c)
-|> ofSeq
-|> flatMap (fun (i, c) ->
-    fromMouseMoves ()
-    |> delay (100 * i)
-    |> map (fun m -> Letter (i, string c, int m.clientX, int m.clientY)))
-```
-
-The above query may be written in query expression style:
-
-```f#
-reaction {
-    let! i, c = Seq.toList "TIME FLIES LIKE AN ARROW"
-                |> Seq.mapi (fun i c -> i, c)
-                |> ofSeq
-    let ms = fromMouseMoves () |> delay (100 * i)
-    for m in ms do
-        yield Letter (i, string c, int m.clientX, int m.clientY)
-}
-```

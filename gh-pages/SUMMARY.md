@@ -1,8 +1,8 @@
 # Summary
 
 * [Introduction](README.md)
-* [Install](Install.md)
-* [Getting Started](GettingStarted.md)
+* [Install](pages/Install.md)
+* [Getting Started](pages/GettingStarted.md)
 * [Types and Interfaces](pages/Types.md)
 
 * [Observers](pages/Observers.md)

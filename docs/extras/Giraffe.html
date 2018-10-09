@@ -100,9 +100,9 @@
             
         </li>
     
-        <li class="chapter " data-level="1.2" data-path="../Install.html">
+        <li class="chapter " data-level="1.2" data-path="../pages/Install.html">
             
-                <a href="../Install.html">
+                <a href="../pages/Install.html">
             
                     
                     Install
@@ -113,9 +113,9 @@
             
         </li>
     
-        <li class="chapter " data-level="1.3" data-path="../GettingStarted.md">
+        <li class="chapter " data-level="1.3" data-path="../pages/GettingStarted.html">
             
-                <span>
+                <a href="../pages/GettingStarted.html">
             
                     
                     Getting Started
@@ -165,9 +165,9 @@
             
         </li>
     
-        <li class="chapter " data-level="1.7" data-path="../pages/Streams.md">
+        <li class="chapter " data-level="1.7" data-path="../pages/Streams.html">
             
-                <span>
+                <a href="../pages/Streams.html">
             
                     
                     Streams
@@ -295,14 +295,11 @@
     
                                 <section class="normal markdown-section">
                                 
-                                <h1 id="giraffe-reactionmiddleware">Giraffe ReactionMiddleWare</h1>
+                                <h1 id="giraffe-reaction-middleware">Giraffe Reaction MiddleWare</h1>
 <p>The Reaction Middleware for Giraffe is an experimental support for server side WebSocket message handling.</p>
 <h2 id="install">Install</h2>
-<p>``sh</p>
-<blockquote>
-<p>paket add Reaction.Giraffe --project <project>
-``</project></p>
-</blockquote>
+<pre><code class="lang-sh">&gt; paket add Reaction.Giraffe --project &lt;project&gt;
+</code></pre>
 <h2 id="getting-started">Getting Started</h2>
 <p>You add the Reaction middleware to Giraffe using the <code>UseReaction&lt;&apos;msg&gt;</code> method on the <code>IApplicationBuilder</code> in the <code>configureApp</code> function of the Giraffe setup.</p>
 <pre><code class="lang-fs"><span class="hljs-keyword">let</span> query (connectionId: ConnectionId) (msgs: IAsyncObservable&lt;Msg*ConnectionId&gt;) : IAsyncObservable&lt;Msg*ConnectionId&gt; =
@@ -393,7 +390,7 @@
     <script>
         var gitbook = gitbook || [];
         gitbook.push(function() {
-            gitbook.page.hasChanged({"page":{"title":"Giraffe","level":"2.1","depth":1,"previous":{"title":"Error Handling","level":"1.11","depth":1,"path":"pages/Error.md","ref":"pages/Error.md","articles":[]},"dir":"ltr"},"config":{"gitbook":"*","theme":"default","variables":{},"plugins":[],"pluginsConfig":{"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"}},"file":{"path":"extras/Giraffe.md","mtime":"2018-10-09T20:08:42.582Z","type":"markdown"},"gitbook":{"version":"3.2.3","time":"2018-10-09T20:10:11.998Z"},"basePath":"..","book":{"language":""}});
+            gitbook.page.hasChanged({"page":{"title":"Giraffe","level":"2.1","depth":1,"previous":{"title":"Error Handling","level":"1.11","depth":1,"path":"pages/Error.md","ref":"pages/Error.md","articles":[]},"dir":"ltr"},"config":{"gitbook":"*","theme":"default","variables":{},"plugins":[],"pluginsConfig":{"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"}},"file":{"path":"extras/Giraffe.md","mtime":"2018-10-09T20:12:16.424Z","type":"markdown"},"gitbook":{"version":"3.2.3","time":"2018-10-09T20:47:50.838Z"},"basePath":"..","book":{"language":""}});
         });
     </script>
 </div>

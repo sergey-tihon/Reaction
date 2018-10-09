@@ -1,12 +1,12 @@
-# Giraffe ReactionMiddleWare
+# Giraffe Reaction MiddleWare
 
 The Reaction Middleware for Giraffe is an experimental support for server side WebSocket message handling.
 
 ## Install
 
-``sh
+```sh
 > paket add Reaction.Giraffe --project <project>
-``
+```
 
 ## Getting Started
 

@@ -1,5 +1,7 @@
 # Getting Started
 
+Below is a simple example of a single value stream being transformed and subscribed using an observer function.
+
 ```fs
 open Reaction
 

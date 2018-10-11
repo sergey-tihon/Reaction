@@ -34,3 +34,5 @@ type Notification<'a> =
     | OnError of exn
     | OnCompleted
 ```
+
+You can read more about observers in the [Observers](./Observers.md) section.

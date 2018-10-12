@@ -10,7 +10,7 @@
   * [Streams](pages/Streams.md)
 * [Operators](pages/Operators.md)
 * [Query Builder](pages/Query.md)
-* [Error Handling](pages/Error.md)
+* [Error Handling](pages/Errors.md)
 
 ----
 

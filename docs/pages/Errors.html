@@ -4,7 +4,7 @@
     <head>
         <meta charset="UTF-8">
         <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
-        <title>Getting Started · GitBook</title>
+        <title>Error Handling · GitBook</title>
         <meta http-equiv="X-UA-Compatible" content="IE=edge" />
         <meta name="description" content="">
         <meta name="generator" content="GitBook 3.2.3">
@@ -57,10 +57,10 @@
     <link rel="shortcut icon" href="../gitbook/images/favicon.ico" type="image/x-icon">
 
     
-    <link rel="next" href="Types.html" />
+    <link rel="next" href="../extras/Giraffe.html" />
     
     
-    <link rel="prev" href="Install.html" />
+    <link rel="prev" href="Query.html" />
     
 
     </head>
@@ -116,7 +116,7 @@
             
         </li>
     
-        <li class="chapter active" data-level="1.1.2" data-path="GettingStarted.html">
+        <li class="chapter " data-level="1.1.2" data-path="GettingStarted.html">
             
                 <a href="GettingStarted.html">
             
@@ -231,7 +231,7 @@
             
         </li>
     
-        <li class="chapter " data-level="1.5" data-path="Errors.html">
+        <li class="chapter active" data-level="1.5" data-path="Errors.html">
             
                 <a href="Errors.html">
             
@@ -294,7 +294,7 @@
     <!-- Title -->
     <h1>
         <i class="fa fa-circle-o-notch fa-spin"></i>
-        <a href=".." >Getting Started</a>
+        <a href=".." >Error Handling</a>
     </h1>
 </div>
 
@@ -309,32 +309,21 @@
     
                                 <section class="normal markdown-section">
                                 
-                                <h1 id="getting-started">Getting Started</h1>
-<p>Below is a simple example of a single value stream being transformed and subscribed using an observer function.</p>
-<pre><code class="lang-fs"><span class="hljs-keyword">open</span> Reaction
-
-<span class="hljs-keyword">let</span> main = async {
-    <span class="hljs-keyword">let</span> mapper x =
-        x * <span class="hljs-number">10</span>
-
-    <span class="hljs-keyword">let</span> xs =
-        AsyncObservable.single <span class="hljs-number">42</span>
-        |&gt; AsyncObservable.map mapper
-
-    <span class="hljs-keyword">let</span> obv n =
-        async {
-            <span class="hljs-keyword">match</span> n <span class="hljs-keyword">with</span>
-            | OnNext x -&gt; printfn <span class="hljs-string">&quot;OnNext: %d&quot;</span> x
-            | OnError ex -&gt; printfn <span class="hljs-string">&quot;OnError: %s&quot;</span> (ex.ToString())
-            | OnCompleted -&gt; printfn <span class="hljs-string">&quot;OnCompleted&quot;</span>
-        }
-
-    <span class="hljs-keyword">let!</span> disposable = xs.SubscribeAsync obv
-    ()
-}
-
-Async.Start main
-</code></pre>
+                                <h1 id="error-handling">Error Handling</h1>
+<p>Reactive applications also need to handle exceptions. But unlike normal applications where exceptions fly upwards, exceptions in a reactive application goes the other way and propagates down the chain of operators.</p>
+<p>Observables will dispose the subscription if any errors occur. No event can be observed after an <code>OnError</code>. This may sound like a restriction, but if we think of the dual world of iterables, then we know that if the iterator throws an exception, then the iteration is over. Observables works in just the same but opposite way.</p>
+<p>When dealing with errors there are several strategies to choose:</p>
+<ul>
+<li>Retrying subscriptions</li>
+<li>Catching exceptions</li>
+<li>Ignoring exceptions</li>
+<li>Logging errors</li>
+</ul>
+<p>It&apos;s important to notice that observer implementations should never throw exceptions. This is because we expect that (1) the observer implementor knows best how to handle those exceptions and we can&apos;t do anything reasonable with them, and (2) if an exception occurs then we want that to bubble out of and not into the reactive framework.</p>
+<p>The following error handling operators have been implemented:</p>
+<ul>
+<li><strong>catch</strong> : <code>(exn -&gt; IAsyncObservable&lt;&apos;a&gt;) -&gt; IAsyncObservable&lt;&apos;a&gt; -&gt; IAsyncObservable&lt;&apos;a&gt;</code>,</li>
+</ul>
 
                                 
                                 </section>
@@ -362,12 +351,12 @@ Async.Start main
 
             
                 
-                <a href="Install.html" class="navigation navigation-prev " aria-label="Previous page: Installing">
+                <a href="Query.html" class="navigation navigation-prev " aria-label="Previous page: Query Builder">
                     <i class="fa fa-angle-left"></i>
                 </a>
                 
                 
-                <a href="Types.html" class="navigation navigation-next " aria-label="Next page: Core Types and Interfaces">
+                <a href="../extras/Giraffe.html" class="navigation navigation-next " aria-label="Next page: Giraffe Middleware">
                     <i class="fa fa-angle-right"></i>
                 </a>
                 
@@ -378,7 +367,7 @@ Async.Start main
     <script>
         var gitbook = gitbook || [];
         gitbook.push(function() {
-            gitbook.page.hasChanged({"page":{"title":"Getting Started","level":"1.1.2","depth":2,"next":{"title":"Core Types and Interfaces","level":"1.2","depth":1,"path":"pages/Types.md","ref":"pages/Types.md","articles":[{"title":"Observers","level":"1.2.1","depth":2,"path":"pages/Observers.md","ref":"pages/Observers.md","articles":[]},{"title":"Observables","level":"1.2.2","depth":2,"path":"pages/Observables.md","ref":"pages/Observables.md","articles":[]},{"title":"Disposables","level":"1.2.3","depth":2,"path":"pages/Disposables.md","ref":"pages/Disposables.md","articles":[]},{"title":"Streams","level":"1.2.4","depth":2,"path":"pages/Streams.md","ref":"pages/Streams.md","articles":[]}]},"previous":{"title":"Installing","level":"1.1.1","depth":2,"path":"pages/Install.md","ref":"pages/Install.md","articles":[]},"dir":"ltr"},"config":{"gitbook":"*","theme":"default","variables":{},"plugins":[],"pluginsConfig":{"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"}},"file":{"path":"pages/GettingStarted.md","mtime":"2018-10-11T06:36:48.626Z","type":"markdown"},"gitbook":{"version":"3.2.3","time":"2018-10-12T05:55:55.146Z"},"basePath":"..","book":{"language":""}});
+            gitbook.page.hasChanged({"page":{"title":"Error Handling","level":"1.5","depth":1,"next":{"title":"Giraffe Middleware","level":"2.1","depth":1,"path":"extras/Giraffe.md","ref":"extras/Giraffe.md","articles":[]},"previous":{"title":"Query Builder","level":"1.4","depth":1,"path":"pages/Query.md","ref":"pages/Query.md","articles":[]},"dir":"ltr"},"config":{"gitbook":"*","theme":"default","variables":{},"plugins":[],"pluginsConfig":{"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"}},"file":{"path":"pages/Errors.md","mtime":"2018-10-11T16:39:04.322Z","type":"markdown"},"gitbook":{"version":"3.2.3","time":"2018-10-12T05:55:55.146Z"},"basePath":"..","book":{"language":""}});
         });
     </script>
 </div>

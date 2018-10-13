@@ -1,6 +1,60 @@
 # Query Builder
 
-Queries may be written by composing functions or using query expressions. Thus the two examples below are equivalent:
+Queries may be written by composing functions or using query expressions.
+
+```fs
+let xs = reaction {
+    yield 42
+}
+```
+
+This expression is equivalent to:
+
+```fs
+let xs = AsyncObservable.single 42
+```
+
+You can also yield multiple values:
+
+```fs
+let xs = reaction {
+    yield 42
+    yield 43
+}
+```
+
+This is equivalent to:
+
+```fs
+let xs = AsyncObservable.ofSeq [42; 43]
+
+// or
+
+let xs = AsyncObservable.concat [AsyncObservable.single 42; AsyncObservable.single 43]
+```
+
+## Flat mapping
+
+```fs
+let xs = reaction {
+    let! i = single 42
+    yield i*10
+}
+```
+
+This is equivalent to:
+
+```fs
+let xs =
+    AsyncObservable.single 42
+    |> flatMap (fun i ->
+        AsynbObservable.single (i * 10))
+}
+```
+
+## More advanced example
+
+These two examples below are equivalent:
 
 ```fs
 Seq.toList "TIME FLIES LIKE AN ARROW"

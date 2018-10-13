@@ -310,12 +310,12 @@
                                 <section class="normal markdown-section">
                                 
                                 <h1 id="the-stream">The Stream</h1>
-<p>You can think of a Stream as being a tube that is open at both sides. Streams implement both the <code>IAsyncObservable&lt;&apos;a&gt;</code> and <code>IAsyncObserver&lt;&apos;a&gt;</code> interfaces. Whatever you put in at one side (<code>IAsyncObserver&lt;&apos;a&gt;</code>) will come out of the other end (<code>IAsyncObservable&lt;&apos;a&gt;</code>).
-Streams and are similar to the classic <code>Subject</code> in ReactiveX. The difference is that a Stream in Reaction is not a single object, but a tuple of two <em>entangled</em> objects where one implements <code>IAsyncObserver&lt;&apos;a&gt;</code>, and the other implements <code>IAsyncObservable&lt;&apos;a&gt;</code>. This solves the problem of having a single object trying to be two things at once (what is the dual of an ISubject&lt;&apos;a&gt; anyways?).</p>
+<p>You can think of a Stream as being a tube that is open at both sides. Streams implement both the <code>IAsyncObservable&lt;&apos;a&gt;</code> and <code>IAsyncObserver&lt;&apos;a&gt;</code> interfaces. Whatever you put in (e.g <code>OnNextAsync</code>) at one side (<code>IAsyncObserver&lt;&apos;a&gt;</code>) will come out of the other end (<code>IAsyncObservable&lt;&apos;a&gt;</code>).
+Streams and are similar to the classic <code>Subject</code> in <a href="http://reactivex.io/" target="_blank">ReactiveX</a>. The difference is that a Stream in Reaction is not a single object, but a tuple of two <em>entangled</em> objects where one implements <code>IAsyncObserver&lt;&apos;a&gt;</code>, and the other implements <code>IAsyncObservable&lt;&apos;a&gt;</code>. This solves the problem of having a single object trying to be two things at once (what is the dual of an ISubject&lt;&apos;a&gt; anyways?).</p>
 <h2 id="stream">Stream</h2>
 <p>The stream will forward any notification pushed to the <code>IAsyncObserver&lt;&apos;a&gt;</code> side to all observers that have subscribed to the <code>IAsyncObservable&lt;&apos;a&gt;</code> side. The stream is hot in the sense that if there are no observers, then the notification will be lost.</p>
 <ul>
-<li><strong>stream</strong> : unit -&gt; IAsyncObserver&lt;&apos;a&gt; * IAsyncObservable&lt;&apos;a&gt;</li>
+<li><strong>stream</strong> : <code>unit -&gt; IAsyncObserver&lt;&apos;a&gt; * IAsyncObservable&lt;&apos;a&gt;</code></li>
 </ul>
 <pre><code class="lang-fs"><span class="hljs-keyword">let</span> dispatch, obs = stream ()
 
@@ -330,7 +330,7 @@ Async.StartImmediate main ()
 <h2 id="mailbox-stream">Mailbox Stream</h2>
 <p>Same as a <code>stream</code> except that the observer is exposed as a <code>MailboxProcessor&lt;Notification&lt;&apos;a&gt;&gt;</code>. The mailbox stream is hot in the sense that if there are no observers, then any pushed notification will be lost.</p>
 <ul>
-<li><strong>mbStream</strong> : unit -&gt; MailboxProcessor<notification<'a>&gt; * IAsyncObservable<'a></'a></notification<'a></li>
+<li><strong>mbStream</strong> : <code>unit -&gt; MailboxProcessor&lt;Notification&lt;&apos;a&gt;&gt; * IAsyncObservable&lt;&apos;a&gt;</code></li>
 </ul>
 <pre><code class="lang-fs"><span class="hljs-keyword">let</span> dispatch, obs = mbStream ()
 
@@ -345,7 +345,7 @@ Async.StartImmediate main ()
 <h2 id="single-stream">Single Stream</h2>
 <p>The stream will forward any notification pushed to the <code>IAsyncObserver&lt;&apos;a&gt;</code> side to a single observer that have subscribed to the <code>IAsyncObservable&lt;&apos;a&gt;</code> side. The single stream is &quot;cold&quot; in the sense that if there&apos;s no-one observing, then the writer will be awaited until there is a subscriber that can observe the value being pushed. You can use a single stream in scenarios that requires so called backpressure.</p>
 <ul>
-<li><strong>singleStream</strong> : unit -&gt; IAsyncObserver&lt;&apos;a&gt; * IAsyncObservable&lt;&apos;a&gt;</li>
+<li><strong>singleStream</strong> : <code>unit -&gt; IAsyncObserver&lt;&apos;a&gt; * IAsyncObservable&lt;&apos;a&gt;</code></li>
 </ul>
 
                                 
@@ -390,7 +390,7 @@ Async.StartImmediate main ()
     <script>
         var gitbook = gitbook || [];
         gitbook.push(function() {
-            gitbook.page.hasChanged({"page":{"title":"Streams","level":"1.2.4","depth":2,"next":{"title":"Operators","level":"1.3","depth":1,"path":"pages/Operators.md","ref":"pages/Operators.md","articles":[]},"previous":{"title":"Disposables","level":"1.2.3","depth":2,"path":"pages/Disposables.md","ref":"pages/Disposables.md","articles":[]},"dir":"ltr"},"config":{"gitbook":"*","theme":"default","variables":{},"plugins":[],"pluginsConfig":{"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"}},"file":{"path":"pages/Streams.md","mtime":"2018-10-11T06:34:29.618Z","type":"markdown"},"gitbook":{"version":"3.2.3","time":"2018-10-12T05:55:55.146Z"},"basePath":"..","book":{"language":""}});
+            gitbook.page.hasChanged({"page":{"title":"Streams","level":"1.2.4","depth":2,"next":{"title":"Operators","level":"1.3","depth":1,"path":"pages/Operators.md","ref":"pages/Operators.md","articles":[]},"previous":{"title":"Disposables","level":"1.2.3","depth":2,"path":"pages/Disposables.md","ref":"pages/Disposables.md","articles":[]},"dir":"ltr"},"config":{"gitbook":"*","theme":"default","variables":{},"plugins":[],"pluginsConfig":{"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"}},"file":{"path":"pages/Streams.md","mtime":"2018-10-12T06:05:50.726Z","type":"markdown"},"gitbook":{"version":"3.2.3","time":"2018-10-13T07:49:29.616Z"},"basePath":"..","book":{"language":""}});
         });
     </script>
 </div>

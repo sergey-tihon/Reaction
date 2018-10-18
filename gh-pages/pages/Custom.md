@@ -7,7 +7,7 @@ creating such a custom stream.
 ## 1. Use a Stream
 
 A Stream in Reaction return both an observer (`IAsyncObserver`) and an observable (`IAsyncObservable`). Note that
-we need to use `Async.Start` to start the worker function so it runs concurrenty.
+we need to use `Async.Start` to start the worker function so it runs concurrently.
 
 ```fs
 open Reaction.Streams
@@ -28,7 +28,7 @@ let myStream () =
 ## 2. Use Create
 
 The `AsyncObservable.Create` function takes an `Async` subscribe function and returns an `IAsyncObservable`. Note that
-we need to use `Async.Start` to start the worker function so it runs concurrenty.
+we need to use `Async.Start` to start the worker function so it runs concurrently.
 
 ```fs
 open Reation.AsyncObservable
@@ -65,6 +65,7 @@ that can be used to detect if cancellation (dispose) have been requested.
 
 ```fs
 open Reaction
+open System.Threading
 
 let myStream' () =
     let worker (obv: IAsyncObserver<Msg>) (token: CancellationToken)  = async {

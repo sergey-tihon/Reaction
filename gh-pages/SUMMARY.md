@@ -11,6 +11,7 @@
 * [Operators](pages/Operators.md)
 * [Query Builder](pages/Query.md)
 * [Error Handling](pages/Errors.md)
+* [Custom Observables](pages/Custom.md)
 
 ----
 

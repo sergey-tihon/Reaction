@@ -325,10 +325,10 @@
                                 <h1 id="creating-custom-observables">Creating Custom Observables</h1>
 <p>There are many ways to create custom observble streams. Note that the goal is to have some kind of
 create function that returns an <code>IAsyncObservable&lt;&apos;a&gt;</code>. We will go through a few options for
-creating a custom stream.</p>
-<h2 id="1-using-a-stream">1. Using a Stream</h2>
-<p>A stream in Reaction return both an observer (<code>IAsyncObserver</code>) and an observable (<code>IAsyncObservable</code>). Note that
-we need to use <code>Async.Start</code> to start the worker so it runs concurrenty.</p>
+creating such a custom stream.</p>
+<h2 id="1-use-a-stream">1. Use a Stream</h2>
+<p>A Stream in Reaction return both an observer (<code>IAsyncObserver</code>) and an observable (<code>IAsyncObservable</code>). Note that
+we need to use <code>Async.Start</code> to start the worker function so it runs concurrenty.</p>
 <pre><code class="lang-fs"><span class="hljs-keyword">open</span> Reaction.Streams
 
 <span class="hljs-keyword">let</span> myStream () =
@@ -345,7 +345,7 @@ we need to use <code>Async.Start</code> to start the worker so it runs concurren
 </code></pre>
 <h2 id="2-use-create">2. Use Create</h2>
 <p>The <code>AsyncObservable.Create</code> function takes an <code>Async</code> subscribe function and returns an <code>IAsyncObservable</code>. Note that
-we need to use <code>Async.Start</code> to start the worker so it runs concurrenty.</p>
+we need to use <code>Async.Start</code> to start the worker function so it runs concurrenty.</p>
 <pre><code class="lang-fs"><span class="hljs-keyword">open</span> Reation.AsyncObservable
 
 <span class="hljs-keyword">let</span> myStream () =
@@ -429,7 +429,7 @@ that can be used to detect if cancellation (dispose) have been requested.</p>
     <script>
         var gitbook = gitbook || [];
         gitbook.push(function() {
-            gitbook.page.hasChanged({"page":{"title":"Custom Observables","level":"1.6","depth":1,"next":{"title":"Giraffe Middleware","level":"2.1","depth":1,"path":"extras/Giraffe.md","ref":"extras/Giraffe.md","articles":[]},"previous":{"title":"Error Handling","level":"1.5","depth":1,"path":"pages/Errors.md","ref":"pages/Errors.md","articles":[]},"dir":"ltr"},"config":{"gitbook":"*","theme":"default","variables":{},"plugins":[],"pluginsConfig":{"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"}},"file":{"path":"pages/Custom.md","mtime":"2018-10-18T18:43:10.502Z","type":"markdown"},"gitbook":{"version":"3.2.3","time":"2018-10-18T18:43:14.081Z"},"basePath":"..","book":{"language":""}});
+            gitbook.page.hasChanged({"page":{"title":"Custom Observables","level":"1.6","depth":1,"next":{"title":"Giraffe Middleware","level":"2.1","depth":1,"path":"extras/Giraffe.md","ref":"extras/Giraffe.md","articles":[]},"previous":{"title":"Error Handling","level":"1.5","depth":1,"path":"pages/Errors.md","ref":"pages/Errors.md","articles":[]},"dir":"ltr"},"config":{"gitbook":"*","theme":"default","variables":{},"plugins":[],"pluginsConfig":{"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"}},"file":{"path":"pages/Custom.md","mtime":"2018-10-18T18:53:14.968Z","type":"markdown"},"gitbook":{"version":"3.2.3","time":"2018-10-18T18:53:24.712Z"},"basePath":"..","book":{"language":""}});
         });
     </script>
 </div>

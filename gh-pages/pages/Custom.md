@@ -2,12 +2,12 @@
 
 There are many ways to create custom observble streams. Note that the goal is to have some kind of
 create function that returns an `IAsyncObservable<'a>`. We will go through a few options for
-creating a custom stream.
+creating such a custom stream.
 
-## 1. Using a Stream
+## 1. Use a Stream
 
-A stream in Reaction return both an observer (`IAsyncObserver`) and an observable (`IAsyncObservable`). Note that
-we need to use `Async.Start` to start the worker so it runs concurrenty.
+A Stream in Reaction return both an observer (`IAsyncObserver`) and an observable (`IAsyncObservable`). Note that
+we need to use `Async.Start` to start the worker function so it runs concurrenty.
 
 ```fs
 open Reaction.Streams
@@ -28,7 +28,7 @@ let myStream () =
 ## 2. Use Create
 
 The `AsyncObservable.Create` function takes an `Async` subscribe function and returns an `IAsyncObservable`. Note that
-we need to use `Async.Start` to start the worker so it runs concurrenty.
+we need to use `Async.Start` to start the worker function so it runs concurrenty.
 
 ```fs
 open Reation.AsyncObservable

@@ -50,7 +50,7 @@ type ReactionConfig<'msg> =
 
 A query for the stream of messages to a given client. The type of the query is `ConnectionId -> IAsyncObservable<'msg*ConnectionId> -> IAsyncObservable<'msg*ConnectionId>`.
 
-The `query` function takes a `connectionId` and an `AsyncObservable<'msg*ConnectionId>`. The `connectionId` is the id for a particualar clients connection. Messages that leaves in the returned observable will only go to that particular client. Notifications will be a tuple `'msg*ConnectionId` where `'msg` is the message being handled and the `connectionId` is the client connection where this message was received.
+The `query` function takes a `connectionId` and an `AsyncObservable<'msg*ConnectionId>`. The `connectionId` is the id for a particular clients connection. Messages that leaves in the returned observable will only go to that particular client. Notifications will be a tuple `'msg*ConnectionId` where `'msg` is the message being handled and the `connectionId` is the client connection where this message was received.
 
 Thus this query will only send messages back to the same client that sent them. Messages for other clients will be filtered.
 

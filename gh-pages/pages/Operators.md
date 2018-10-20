@@ -8,15 +8,22 @@ and not make this into a full featured [ReactiveX](http://reactivex.io/) impleme
 
 Functions for creating (`'a -> IAsyncObservable<'a>`) an async observable.
 
-- **empty** : unit -> IAsyncObservable<'a>
-- **single** : 'a -> IAsyncObservable<'a>
-- **fail** : exn -> IAsyncObservable<'a>
-- **defer** : (unit -> IAsyncObservable<'a>) -> IAsyncObservable<'a>
-- **create** : (AsyncObserver\<'a\> -> Async\<AsyncDisposable\>) -> IAsyncObservable<'a>
-- **ofSeq** : seq<'a> -> IAsyncObservable<'a>
-- **ofAsyncSeq** : AsyncSeq<'a> -> IAsyncObservable<'a> *(Not available in Fable)*
-- **timer** : int -> IAsyncObservable\<int\>
-- **interval** int -> IAsyncObservable\<int\>
+- **empty** : `unit -> IAsyncObservable<'a>`, Returns an observable sequence with no elements.
+- **single** : `'a -> IAsyncObservable<'a>`, Returns an observable sequence containing the single specified
+    element.
+- **fail** : `exn -> IAsyncObservable<'a>`, Returns the observable sequence that terminates exceptionally
+    with the specified exception.
+- **defer** : `(unit -> IAsyncObservable<'a>) -> IAsyncObservable<'a>`, Returns an observable sequence that invokes the specified factory
+    function whenever a new observer subscribes.
+- **create** : `(AsyncObserver<'a> -> Async<AsyncDisposable>) -> IAsyncObservable<'a>`, Creates an async observable (`AsyncObservable{'a}`) from the
+    given subscribe function.
+- **ofSeq** : `seq<'a> -> IAsyncObservable<'a>`, Returns the async observable sequence whose elements are pulled
+    from the given enumerable sequence.
+- **ofAsyncSeq** : `AsyncSeq<'a> -> IAsyncObservable<'a>`, Convert async sequence into an async observable *(Not available in Fable)*.
+- **timer** : `int -> IAsyncObservable<int>`, Returns an observable sequence that triggers the value 0
+    after the given duetime.
+- **interval** `int -> IAsyncObservable<int>`, Returns an observable sequence that triggers the increasing
+    sequence starting with 0 after the given period.
 
 ## Transform
 
@@ -29,9 +36,9 @@ Functions for transforming (`IAsyncObservable<'a> -> IAsyncObservable<'b>`) an a
 - **flatMap** : ('a -> IAsyncObservable<'b>) -> IAsyncObservable<'a> -> IAsyncObservable<'b>
 - **flatMapi** : ('a*int -> IAsyncObservable<'b>) -> IAsyncObservable<'a> -> IAsyncObservable<'b>
 - **flatMapAsync** : ('a -> Async\<IAsyncObservable\<'b\>\>) -> IAsyncObservable<'a> -> IAsyncObservable<'b>
-- **flatMapiAsync** : ('a*int -> Async\<IAsyncObservable\<'b\>\>) -> IAsyncObservable<'a> -> IAsyncObservable<'b>
+- **flatMapiAsync** : ('a*int -> Async<IAsyncObservable\<'b\>\>) -> IAsyncObservable<'a> -> IAsyncObservable<'b>
 - **flatMapLatest** : ('a -> IAsyncObservable<'b>) -> IAsyncObservable<'a> -> IAsyncObservable<'b>
-- **flatMapLatestAsync** : ('a -> Async\<IAsyncObservable\<'b\>\>) -> IAsyncObservable<'a> -> IAsyncObservable<'b>
+- **flatMapLatestAsync** : ('a -> Async<IAsyncObservable\<'b\>\>) -> IAsyncObservable<'a> -> IAsyncObservable<'b>
 - **catch** : (exn -> IAsyncObservable<'a>) -> IAsyncObservable<'a> -> IAsyncObservable<'a>
 
 ## Filter
@@ -56,7 +63,7 @@ Functions for filtering (`IAsyncObservable<'a> -> IAsyncObservable<'a>`) an asyn
 Functions for combining multiple async observables into one.
 
 - **merge** : IAsyncObservable<'a> -> IAsyncObservable<'a> -> IAsyncObservable<'a>
-- **mergeInner** : IAsyncObservable<IAsyncObservable<'a>> -> IAsyncObservable<'a>
+- **mergeInner** : IAsyncObservable\<IAsyncObservable<'a>\> -> IAsyncObservable<'a>
 - **switchLatest** : IAsyncObservable<IAsyncObservable<'a>> -> IAsyncObservable<'a>
 - **concat** : seq<IAsyncObservable<'a>> -> IAsyncObservable<'a>
 - **startWith** : seq<'a> -> IAsyncObservable<'a> -> IAsyncObservable<'a>

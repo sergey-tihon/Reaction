@@ -12,7 +12,7 @@ open Tests.Utils
 let toTask computation : Task = Async.StartAsTask computation :> _
 
 [<Test>]
-let ``Test filter``() = toTask <| async {
+let ``Test filter async``() = toTask <| async {
     // Arrange
     let predicate x =
         async {
@@ -20,6 +20,27 @@ let ``Test filter``() = toTask <| async {
         }
 
     let xs = ofSeq <| seq { 1..5 } |> filterAsync predicate
+    let obv = TestObserver<int>()
+
+    // Act
+    let! sub = xs.SubscribeAsync obv
+    let! result = obv.Await ()
+
+    // Assert
+    result |> should equal 2
+    obv.Notifications |> should haveCount 3
+    let actual = obv.Notifications |> Seq.toList
+    let expected = [ OnNext 1; OnNext 2; OnCompleted ]
+    Assert.That(actual, Is.EquivalentTo(expected))
+}
+
+
+[<Test>]
+let ``Test filter``() = toTask <| async {
+    // Arrange
+    let predicate x = x < 3
+
+    let xs = ofSeq <| seq { 1..5 } |> filter predicate
     let obv = TestObserver<int>()
 
     // Act

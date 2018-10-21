@@ -1,22 +1,104 @@
 # Operators
 
 The following parameterized async observerable returning functions (operators) are
-currently supported. Other operators may be implemented on-demand, but the goal is to keep it simple
-and not make this into a full featured [ReactiveX](http://reactivex.io/) implementation (if possible).
+currently supported. Other operators may be implemented on-demand, but the goal is to keep it simple and not make this into a full featured [ReactiveX](http://reactivex.io/) implementation (if possible).
 
-## Create
+To use the operators open either the `Reaction` namespace.
+
+```fs
+open Reaction
+
+xs = AsyncObserable.single 42
+```
+
+You can also open the `Reaction.AsyncObserable` module if you don't want to prepend every operator with `AsyncObservable`. Be aware of possible namespace conflicts with operators such as `map`.
+
+```fs
+open Reaction.AsyncObserable
+
+xs = single 42
+```
+
+For the examples below we assume that `Reaction.AsyncObservale` is opened.
+
+## Creating
 
 Functions for creating (`'a -> IAsyncObservable<'a>`) an async observable.
 
-- **empty** : `unit -> IAsyncObservable<'a>`, Returns an observable sequence with no elements.
-- **single** : `'a -> IAsyncObservable<'a>`, Returns an observable sequence containing the single specified
-    element.
-- **fail** : `exn -> IAsyncObservable<'a>`, Returns the observable sequence that terminates exceptionally
-    with the specified exception.
-- **defer** : `(unit -> IAsyncObservable<'a>) -> IAsyncObservable<'a>`, Returns an observable sequence that invokes the specified factory
-    function whenever a new observer subscribes.
-- **create** : `(AsyncObserver<'a> -> Async<AsyncDisposable>) -> IAsyncObservable<'a>`, Creates an async observable (`AsyncObservable{'a}`) from the
-    given subscribe function.
+### empty
+
+Returns an async observable sequence with no elements. You must usually indicate which type the resulting observable should be since empty itself doesn't produce any values.
+
+```fs
+val empty : unit : IAsyncObservable<'a>
+```
+
+**Example:**
+
+```fs
+let xs = empty<int> ()
+```
+
+### single
+
+Returns an observable sequence containing the single specified
+element.
+
+```fs
+val single : x: 'a -> IAsyncObservable<'a> =
+```
+
+**Example:**
+
+```fs
+let xs = single 42
+```
+
+### fail
+
+Returns the observable sequence that terminates exceptionally
+with the specified exception.
+
+```fs
+val fail error: exn -> IAsyncObservable<'a> =
+```
+
+**Example:**
+
+```fs
+exception MyError of string
+
+let error = MyError "error"
+let xs = fail<int> error
+```
+
+### defer
+
+Returns an observable sequence that invokes the specified factory
+function whenever a new observer subscribes.
+
+```fs
+val defer : factory: (unit -> IAsyncObservable<'a>) -> IAsyncObservable<'a>
+```
+
+### create
+
+Creates an async observable (`AsyncObservable<'a>`) from the
+given subscribe function.
+
+```fs
+val create : subscribe: (IAsyncObserver<'a> -> Async<IAsyncDisposable>) -> IAsyncObservable<'a>
+```
+
+**Example:**
+
+```fs
+exception MyError of string
+
+let error = MyError "error"
+let xs = fail error
+```
+
 - **ofSeq** : `seq<'a> -> IAsyncObservable<'a>`, Returns the async observable sequence whose elements are pulled
     from the given enumerable sequence.
 - **ofAsyncSeq** : `AsyncSeq<'a> -> IAsyncObservable<'a>`, Convert async sequence into an async observable *(Not available in Fable)*.
@@ -25,7 +107,7 @@ Functions for creating (`'a -> IAsyncObservable<'a>`) an async observable.
 - **interval** `int -> IAsyncObservable<int>`, Returns an observable sequence that triggers the increasing
     sequence starting with 0 after the given period.
 
-## Transform
+## Transforming
 
 Functions for transforming (`IAsyncObservable<'a> -> IAsyncObservable<'b>`) an async observable.
 
@@ -41,24 +123,90 @@ Functions for transforming (`IAsyncObservable<'a> -> IAsyncObservable<'b>`) an a
 - **flatMapLatestAsync** : ('a -> Async<IAsyncObservable\<'b\>\>) -> IAsyncObservable<'a> -> IAsyncObservable<'b>
 - **catch** : (exn -> IAsyncObservable<'a>) -> IAsyncObservable<'a> -> IAsyncObservable<'a>
 
-## Filter
+## Filtering
 
 Functions for filtering (`IAsyncObservable<'a> -> IAsyncObservable<'a>`) an async observable.
 
-- **filter** : ('a -> bool) -> IAsyncObservable<'a> -> IAsyncObservable<'a>
+### filter
+
+Filters the elements of an observable sequence based on a
+predicate. Returns an observable sequence that contains elements
+from the input sequence that satisfy the condition.
+
+```fs
+val filter : predicate: ('a -> bool) -> IAsyncObservable<'a> -> IAsyncObservable<'a>
+```
+
+**Example:**
+
+```fs
+let predicate x = x < 3
+
+let xs = ofSeq <| seq { 1..5 } |> filter predicate
+```
+
 - **filterAsync** : ('a -> Async\<bool\>) -> IAsyncObservable<'a> -> IAsyncObservable<'a>
 - **distinctUntilChanged** : IAsyncObservable<'a> -> IAsyncObservable<'a>
 - **takeUntil** : IAsyncObservable<'b> -> IAsyncObservable<'a> -> IAsyncObservable<'a>
 - **choose** : ('a -> 'b option) -> IAsyncObservable<'a> -> IAsyncObservable<'b>
 - **chooseAsync** : ('a -> Async<'b option>) -> IAsyncObservable<'a> -> IAsyncObservable<'b>
 
-## Aggregate
+## Aggregating
 
-- **scan** : 's -> ('s -> 'a -> 's) -> IAsyncObservable<'a> -> IAsyncObservable<'s>
-- **scanAsync** : 's -> ('s -> 'a -> Async<'s>) -> IAsyncObservable<'a> -> IAsyncObservable<'s>
-- **groupBy** : ('a -> 'g) -> IAsyncObservable<'a> -> IAsyncObservable\<IAsyncObservable\<'a\>\>
+### scan
 
-## Combine
+Applies an accumulator function over an observable sequence for every value `'a` and returns each intermediate result `'s`. The `initial` seed value is used as the initial accumulator value. Returns an observable sequence containing the accumulated values `'s`.
+
+```fs
+val scan : initial: 's -> accumulator: ('s -> 'a -> 's) -> source: IAsyncObservable<'a> -> IAsyncObservable<'s>
+```
+
+**Example:**
+
+```fs
+let scanner a x = a + x
+
+let xs = ofSeq <| seq { 1..5 } |> scan 0 scanner
+```
+
+### scanAsync
+
+Applies an async accumulator function over an observable
+sequence and returns each intermediate result. The seed value is
+used as the initial accumulator value. Returns an observable
+sequence containing the accumulated values.
+
+```fs
+val scan : initial: 's -> accumulator: ('s -> 'a -> Async<'s>) -> source: IAsyncObservable<'a> -> IAsyncObservable<'s>
+```
+
+**Example:**
+
+```fs
+let scannerAsync a x = async { return a + x }
+
+let xs = ofSeq <| seq { 1..5 } |> scanAsync 0 scannerAsync
+```
+
+### groupBy
+
+Groups the elements of an observable sequence according to a
+specified key mapper function. Returns a sequence of observable
+groups, each of which corresponds to a given key.
+
+```fs
+val groupBy : keyMapper: ('a -> 'g) -> source: IAsyncObservable<'a> -> IAsyncObservable<IAsyncObservable<'a>>
+```
+
+**Example:**
+
+```fs
+let xs = ofSeq [1; 2; 3; 4; 5; 6]
+        |> groupBy (fun x -> x % 2)
+        |> flatMap (fun x -> x)
+```
+
+## Combining
 
 Functions for combining multiple async observables into one.
 
@@ -71,14 +219,14 @@ Functions for combining multiple async observables into one.
 - **withLatestFrom** : IAsyncObservable<'b> -> IAsyncObservable<'a> -> IAsyncObservable<'a*'b>
 - **zipSeq** : seq<'b> -> IAsyncObservable<'a> -> IAsyncObservable<'a*'b>
 
-## Time-shift
+## Time-shifting
 
 Functions for time-shifting (`IAsyncObservable<'a> -> IAsyncObservable<'a>`) an async observable.
 
 - **delay** : int -> IAsyncObservable<'a> -> IAsyncObservable<'a>
 - **debounce** : int -> IAsyncObservable<'a> -> IAsyncObservable<'a>
 
-## Leave
+## Leaving
 
 Functions for leaving (`IAsyncObservable<'a> -> 'a`) the async observable.
 

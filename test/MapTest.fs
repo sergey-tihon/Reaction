@@ -83,3 +83,56 @@ let ``Test map mapper throws exception``() = toTask <| async {
     let expected : Notification<unit> list = [ OnError error ]
     Assert.That(actual, Is.EquivalentTo(expected))
 }
+
+type Msg = int
+let getMessageAsync () = async {
+    return 42;
+}
+let myStream () =
+    let subscribe (obs: IAsyncObserver<Msg>) : Async<IAsyncDisposable> =
+        let mutable running = true
+
+        async {
+            let worker () = async {
+                while running do
+                    let! msg = getMessageAsync ()
+                    do! obs.OnNextAsync msg
+                }
+
+            Async.Start (worker ())
+
+            let cancel () = async {
+                running <- false
+            }
+
+            return AsyncDisposable.Create(cancel)
+        }
+
+    AsyncObservable.create(subscribe)
+
+open Reaction
+open System.Threading
+
+let myStream' () =
+    let worker (obv: IAsyncObserver<Msg>) (token: CancellationToken)  = async {
+        while not token.IsCancellationRequested do
+            let! msg = getMessageAsync ()
+            do! obv.OnNextAsync msg
+
+    }
+
+    Create.ofAsyncWorker(worker)
+
+open Reaction.Streams
+
+let myStream2 () =
+    let dispatch, obs = stream<Msg> ()
+
+    let worker () = async {
+        while true do
+            let! msg = getMessageAsync ()
+            do! dispatch.OnNextAsync msg
+    }
+
+    Async.Start (worker ())
+    obs

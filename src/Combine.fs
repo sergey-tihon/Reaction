@@ -57,11 +57,6 @@ module Combine =
             }
         { new IAsyncObservable<'a> with member __.SubscribeAsync o = subscribeAsync o }
 
-    /// Prepends a sequence of values to an observable sequence.
-    /// Returns the source sequence prepended with the specified values.
-    let inline startWith (items : seq<'a>) (source: IAsyncObservable<'a>) =
-        concat [Create.ofSeq items; source]
-
     /// Merges an observable sequence of observable sequences into an
     /// observable sequence.
     let mergeInner (source: IAsyncObservable<IAsyncObservable<'a>>) : IAsyncObservable<'a> =
@@ -128,10 +123,6 @@ module Combine =
                 return AsyncDisposable.Create cancel
             }
         { new IAsyncObservable<'a> with member __.SubscribeAsync o = subscribeAsync o }
-
-    /// Merges an observable sequence with another observable sequences.
-    let inline merge (other : IAsyncObservable<'a>) (source: IAsyncObservable<'a>) : IAsyncObservable<'a> =
-        Create.ofSeq [source; other] |> mergeInner
 
     type Notifications<'a, 'b> =
     | Source of Notification<'a>

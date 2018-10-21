@@ -1,6 +1,7 @@
 namespace Reaction
 
 open System.Threading
+open Reaction.Core
 
 [<RequireQualifiedAccess>]
 module Aggregatation =
@@ -10,6 +11,7 @@ module Aggregatation =
     /// sequence containing the accumulated values.
     let scanAsync (initial: 's) (accumulator: 's -> 'a -> Async<'s>) (source: IAsyncObservable<'a>) : IAsyncObservable<'s> =
         let subscribeAsync (aobv : IAsyncObserver<'s>) =
+            let safeObserver = safeObserver aobv
             let mutable state = initial
 
             async {
@@ -17,16 +19,18 @@ module Aggregatation =
                     async {
                         match n with
                         | OnNext x ->
-                            let! state' =  accumulator state x
-                            state <- state'
-                            do! aobv.OnNextAsync state
-                        | OnError e -> do! aobv.OnErrorAsync e
-                        | OnCompleted -> do! aobv.OnCompletedAsync ()
+                            try
+                                let! state' = accumulator state x
+                                state <- state'
+                                do! safeObserver.OnNextAsync state
+                            with
+                            | err -> do! safeObserver.OnErrorAsync err
+                        | OnError e -> do! safeObserver.OnErrorAsync e
+                        | OnCompleted -> do! safeObserver.OnCompletedAsync ()
                     }
                 return! AsyncObserver obv |> source.SubscribeAsync
             }
         { new IAsyncObservable<'s> with member __.SubscribeAsync o = subscribeAsync o }
-
 
     /// Applies an accumulator function over an observable sequence and
     /// returns each intermediate result. The seed value is used as the

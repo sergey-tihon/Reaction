@@ -82,4 +82,4 @@ Functions for time-shifting (`IAsyncObservable<'a> -> IAsyncObservable<'a>`) an 
 
 Functions for leaving (`IAsyncObservable<'a> -> 'a`) the async observable.
 
--- **toAsyncSeq** : IAsyncObservable<'a> -> AsyncSeq<'a> *(Not available in Fable)*
+- **toAsyncSeq** : IAsyncObservable<'a> -> AsyncSeq<'a> *(Not available in Fable)*

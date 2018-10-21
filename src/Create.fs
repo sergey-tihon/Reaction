@@ -31,7 +31,7 @@ module Create =
 
     /// Returns the async observable sequence whose single element is
     /// the result of the given async workflow.
-    let inline ofAsync(workflow : Async<'a>)  : IAsyncObservable<'a> =
+    let ofAsync (workflow : Async<'a>)  : IAsyncObservable<'a> =
         ofAsyncWorker (fun obv _ -> async {
             let! result = workflow
             do! obv.OnNextAsync result
@@ -46,9 +46,9 @@ module Create =
 
     /// Returns the observable sequence that terminates exceptionally
     /// with the specified exception.
-    let inline fail<'a> (exn) : IAsyncObservable<'a> =
+    let inline fail<'a> (error: exn) : IAsyncObservable<'a> =
         ofAsyncWorker (fun obv _ -> async {
-            do! obv.OnErrorAsync exn
+            do! obv.OnErrorAsync error
         })
 
     /// Returns the async observable sequence whose elements are pulled
@@ -110,6 +110,8 @@ module Create =
     let inline single (x : 'a) : IAsyncObservable<'a> =
         ofSeq [ x ]
 
+    // Returns an observable sequence that invokes the specified factory
+    // function whenever a new observer subscribes.
     let defer (factory: unit -> IAsyncObservable<'a>) : IAsyncObservable<'a> =
         let subscribeAsync  (aobv : IAsyncObserver<'a>) : Async<IAsyncDisposable> =
             async {
@@ -125,7 +127,7 @@ module Create =
         { new IAsyncObservable<'a> with member __.SubscribeAsync o = subscribeAsync o }
 
     /// Returns an observable sequence that triggers the increasing
-    /// sequence starting with 0 after the given period.
+    /// sequence starting with 0 after the given msecs, and the after each period.
     let interval (msecs: int) (period: int) : IAsyncObservable<int> =
         let subscribeAsync  (aobv : IAsyncObserver<int>) : Async<IAsyncDisposable> =
             let cancel, token = canceller ()
@@ -147,8 +149,8 @@ module Create =
         { new IAsyncObservable<int> with member __.SubscribeAsync o = subscribeAsync o }
 
     /// Returns an observable sequence that triggers the value 0
-    /// after the given duetime.
-    let timer dueTime : IAsyncObservable<int> =
+    /// after the given duetime in milliseconds.
+    let timer (dueTime: int) : IAsyncObservable<int> =
         interval dueTime 0
 
 

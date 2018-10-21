@@ -6,13 +6,13 @@ open Core
 module Transformation =
     /// Returns an observable sequence whose elements are the result of
     /// invoking the async mapper function on each element of the source.
-    let mapAsync (mapper: 'a -> Async<'b>) (source: IAsyncObservable<'a>) : IAsyncObservable<'b> =
+    let mapAsync (mapperAsync: 'a -> Async<'b>) (source: IAsyncObservable<'a>) : IAsyncObservable<'b> =
         let subscribeAsync (aobv : IAsyncObserver<'b>) : Async<IAsyncDisposable> =
             async {
                 let _obv =
                     { new IAsyncObserver<'a> with
                         member this.OnNextAsync x = async {
-                            let! b =  mapper x
+                            let! b =  mapperAsync x
                             do! aobv.OnNextAsync b
                         }
                         member this.OnErrorAsync err = async {
@@ -74,9 +74,9 @@ module Transformation =
     /// into an observable sequence by incorporating the element's
     /// index on each element of the source. Merges the resulting
     /// observable sequences back into one observable sequence.
-    let flatMapiAsync (mapper:'a*int -> Async<IAsyncObservable<'b>>) (source: IAsyncObservable<'a>) : IAsyncObservable<'b> =
+    let flatMapiAsync (mapperAsync:'a*int -> Async<IAsyncObservable<'b>>) (source: IAsyncObservable<'a>) : IAsyncObservable<'b> =
         source
-        |> mapiAsync mapper
+        |> mapiAsync mapperAsync
         |> Combine.mergeInner
 
     /// Transforms an observable sequence of observable sequences into
@@ -155,9 +155,9 @@ module Transformation =
     /// Asynchronosly transforms the items emitted by an source sequence
     /// into observable streams, and mirror those items emitted by the
     /// most-recently transformed observable sequence.
-    let flatMapLatestAsync (mapper: 'a -> Async<IAsyncObservable<'b>>) (source: IAsyncObservable<'a>) : IAsyncObservable<'b> =
+    let flatMapLatestAsync (mapperAsync: 'a -> Async<IAsyncObservable<'b>>) (source: IAsyncObservable<'a>) : IAsyncObservable<'b> =
         source
-        |> mapAsync mapper
+        |> mapAsync mapperAsync
         |> switchLatest
 
     /// Transforms the items emitted by an source sequence into

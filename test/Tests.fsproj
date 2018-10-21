@@ -18,6 +18,7 @@
     <Compile Include="TakeUntilTest.fs" />
     <Compile Include="AsyncSeqTest.fs" />
     <Compile Include="SwitchTest.fs" />
+    <Compile Include="ScanTest.fs" />
     <Compile Include="QueryTest.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>

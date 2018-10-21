@@ -28,191 +28,244 @@ module AsyncObservable =
             return disposable
         }
 
-//    let (>>=) (m: IAsyncObservable<'a>) (fn: ('a->IAsyncObservable<'b>)) : IAsyncObservable<'b> =
-//        m |> Transformation.flatMap fn
-
     // Aggregate
-    let groupBy = Aggregatation.groupBy
+
+    /// Groups the elements of an observable sequence according to a
+    /// specified key mapper function. Returns a sequence of observable
+    /// groups, each of which corresponds to a given key.
+    let inline groupBy (keyMapper: 'a -> 'g) (source: IAsyncObservable<'a>) : IAsyncObservable<IAsyncObservable<'a>> =
+        Aggregatation.groupBy keyMapper source
+
     /// Applies an accumulator function over an observable sequence and
     /// returns each intermediate result. The seed value is used as the
     /// initial accumulator value. Returns an observable sequence
     /// containing the accumulated values.
-    let scan = Aggregatation.scan
+    let inline scan (initial: 's) (accumulator: 's -> 'a -> 's) (source: IAsyncObservable<'a>) : IAsyncObservable<'s> =
+        Aggregatation.scan initial accumulator source
 
     /// Applies an async accumulator function over an observable
     /// sequence and returns each intermediate result. The seed value is
     /// used as the initial accumulator value. Returns an observable
     /// sequence containing the accumulated values.
-    let scanAsync = Aggregatation.scanAsync
+    let inline scanAsync (initial: 's) (accumulator: 's -> 'a -> Async<'s>) (source: IAsyncObservable<'a>) : IAsyncObservable<'s> =
+        Aggregatation.scanAsync initial accumulator source
 
     // Combine
 
     /// Merges the specified observable sequences into one observable
     /// sequence by combining elements of the sources into tuples.
     /// Returns an observable sequence containing the combined results.
-    let combineLatest = Combine.combineLatest
+    let inline combineLatest (other: IAsyncObservable<'b>) (source: IAsyncObservable<'a>) : IAsyncObservable<'a*'b> =
+        Combine.combineLatest other source
 
     /// Returns an observable sequence that contains the elements of
     /// each given sequences, in sequential order.
-    let concat = Combine.concat
-
-    /// Merges an observable sequence with another observable sequences.
-    let merge = Combine.merge
+    let inline concat (sources: seq<IAsyncObservable<'a>>) : IAsyncObservable<'a> =
+        Combine.concat sources
 
     /// Merges an observable sequence of observable sequences into an
     /// observable sequence.
-    let mergeInner = Combine.mergeInner
+    let inline mergeInner (source: IAsyncObservable<IAsyncObservable<'a>>) : IAsyncObservable<'a> =
+        Combine.mergeInner source
+
+    /// Merges an observable sequence with another observable sequences.
+    let inline merge (other : IAsyncObservable<'a>) (source: IAsyncObservable<'a>) : IAsyncObservable<'a> =
+        Create.ofSeq [source; other] |> mergeInner
 
     /// Prepends a sequence of values to an observable sequence.
     /// Returns the source sequence prepended with the specified values.
-    let startWith = Combine.startWith
+    let inline startWith (items : seq<'a>) (source: IAsyncObservable<'a>) =
+        concat [Create.ofSeq items; source]
 
     /// Merges the specified observable sequences into one observable
     /// sequence by combining the values into tuples only when the first
     /// observable sequence produces an element. Returns the combined
     /// observable sequence.
-    let withLatestFrom = Combine.withLatestFrom
-    let zipSeq = Combine.zipSeq
+    let inline withLatestFrom (other: IAsyncObservable<'b>) (source: IAsyncObservable<'a>) : IAsyncObservable<'a*'b> =
+        Combine.withLatestFrom other source
+
+    /// Zip given sequence with source. Combines one and one item from each stream into one tuple.
+    let inline zipSeq (sequence: seq<'b>) (source: IAsyncObservable<'a>) : IAsyncObservable<'a*'b> =
+        Combine.zipSeq sequence source
 
     // Creation
 
     /// Creates an async observable (`AsyncObservable{'a}`) from the
     /// given subscribe function.
-    let create = Create.create
+    let inline create (subscribe : IAsyncObserver<'a> -> Async<IAsyncDisposable>) : IAsyncObservable<'a> =
+        Create.create subscribe
 
-    let defer = Create.defer
+    // Returns an observable sequence that invokes the specified factory
+    // function whenever a new observer subscribes.
+    let inline defer (factory: unit -> IAsyncObservable<'a>) : IAsyncObservable<'a> =
+        Create.defer factory
 
     /// Returns an observable sequence with no elements.
-    let empty<'a> = Create.empty<'a>
+    let inline empty<'a> () : IAsyncObservable<'a> =
+        Create.empty<'a> ()
 
     /// Returns the observable sequence that terminates exceptionally
     /// with the specified exception.
-    let fail<'a> = Create.fail<'a>
+    let inline fail<'a> (error: exn) : IAsyncObservable<'a> =
+        Create.fail<'a> error
 
     /// Returns an observable sequence that triggers the increasing
     /// sequence starting with 0 after the given period.
-    let interval = Create.interval
-    let ofAsync = Create.ofAsync
+    let inline interval (msecs: int) (period: int) : IAsyncObservable<int> =
+        Create.interval msecs period
+
+    /// Returns the async observable sequence whose single element is
+    /// the result of the given async workflow.
+    let inline ofAsync (workflow: Async<'a>)  : IAsyncObservable<'a> =
+        Create.ofAsync workflow
+
 #if !FABLE_COMPILER
-    let ofAsyncSeq = Create.ofAsyncSeq
+    /// Convert async sequence into an async observable.
+    let inline ofAsyncSeq (xs: AsyncSeq<'a>) : IAsyncObservable<'a> =
+        Create.ofAsyncSeq xs
 #endif
     /// Returns the async observable sequence whose elements are pulled
     /// from the given enumerable sequence.
-    let ofSeq = Create.ofSeq
+    let inline ofSeq (xs: seq<'a>) : IAsyncObservable<'a> =
+        Create.ofSeq xs
+
     /// Returns an observable sequence containing the single specified
     /// element.
-    let single = Create.single
+    let inline single (x : 'a) : IAsyncObservable<'a> =
+        ofSeq [ x ]
 
     /// Returns an observable sequence that triggers the value 0
     /// after the given duetime.
-    let timer = Create.timer
+    let inline timer (dueTime: int) : IAsyncObservable<int> =
+        Create.timer dueTime
 
     // Filter
 
     /// Applies the given function to each element of the stream and
     /// returns the stream comprised of the results for each element
     /// where the function returns Some with some value.
-    let choose = Filter.choose
+    let inline choose (chooser: 'a -> 'b option) (source: IAsyncObservable<'a>) : IAsyncObservable<'b> =
+        Filter.choose chooser source
 
     /// Applies the given async function to each element of the stream and
     /// returns the stream comprised of the results for each element
     /// where the function returns Some with some value.
-    let chooseAsync = Filter.chooseAsync
+    let inline chooseAsync (chooser: 'a -> Async<'b option>) (source: IAsyncObservable<'a>) : IAsyncObservable<'b> =
+        Filter.chooseAsync chooser source
 
     /// Return an observable sequence only containing the distinct
     /// contiguous elementsfrom the source sequence.
-    let distinctUntilChanged =Filter.distinctUntilChanged
+    let inline distinctUntilChanged (source: IAsyncObservable<'a>) : IAsyncObservable<'a> =
+        Filter.distinctUntilChanged source
 
     /// Filters the elements of an observable sequence based on a
     /// predicate. Returns an observable sequence that contains elements
     /// from the input sequence that satisfy the condition.
-    let filter = Filter.filter
+    let inline filter (predicate: 'a -> bool) (source: IAsyncObservable<'a>) : IAsyncObservable<'a> =
+        Filter.filter predicate source
 
     /// Filters the elements of an observable sequence based on an async
     /// predicate. Returns an observable sequence that contains elements
     /// from the input sequence that satisfy the condition.
-    let filterAsync = Filter.filterAsync
+    let inline filterAsync (predicate: 'a -> Async<bool>) (source: IAsyncObservable<'a>) : IAsyncObservable<'a> =
+        Filter.filterAsync predicate source
 
     /// Returns the values from the source observable sequence until the
     /// other observable sequence produces a value.
-    let takeUntil = Filter.takeUntil
+    let inline takeUntil (other: IAsyncObservable<'b>) (source: IAsyncObservable<'a>) : IAsyncObservable<'a> =
+        Filter.takeUntil other source
 
     // Leave
 #if !FABLE_COMPILER
     /// Convert async observable to async sequence, non-blocking.
     /// Producer will be awaited until item is consumed by the async
     /// enumerator.
-    let toAsyncSeq = Leave.toAsyncSeq
+    let inline toAsyncSeq (source: IAsyncObservable<'a>) : AsyncSeq<'a> =
+        Leave.toAsyncSeq source
 #endif
 
     // Timeshift
 
     /// Ignores values from an observable sequence which are followed by
     /// another value before the given timeout.
-    let debounce msecs source = Timeshift.debounce msecs source
+    let inline debounce (msecs: int) (source: IAsyncObservable<'a>) : IAsyncObservable<'a> =
+        Timeshift.debounce msecs source
 
     /// Time shifts the observable sequence by the given timeout. The
     /// relative time intervals between the values are preserved.
-    let delay msecs source = Timeshift.delay msecs source
+    let inline delay (msecs: int) (source: IAsyncObservable<_>) : IAsyncObservable<'a> =
+        Timeshift.delay msecs source
 
     // Transform
 
     /// Returns an observable sequence containing the first sequence's
     /// elements, followed by the elements of the handler sequence in
     /// case an exception occurred.
-    let catch = Transformation.catch
+    let inline catch (handler: exn -> IAsyncObservable<'a>) (source: IAsyncObservable<'a>) : IAsyncObservable<'a> =
+        Transformation.catch handler source
 
     /// Projects each element of an observable sequence into an
     /// observable sequence and merges the resulting observable
     /// sequences back into one observable sequence.
-    let flatMap fn source = Transformation.flatMap fn source
+    let inline flatMap (mapper:'a -> IAsyncObservable<'b>) (source: IAsyncObservable<'a>) : IAsyncObservable<'b> =
+        Transformation.flatMap mapper source
 
     /// Asynchronously projects each element of an observable sequence
     /// into an observable sequence and merges the resulting observable
     /// sequences back into one observable sequence.
-    let flatMapAsync fnAsync source = Transformation.flatMapAsync fnAsync source
+    let inline flatMapAsync (mapperAsync:'a -> Async<IAsyncObservable<'b>>) (source: IAsyncObservable<'a>) : IAsyncObservable<'b> =
+        Transformation.flatMapAsync mapperAsync source
 
     /// Projects each element of an observable sequence into an
     /// observable sequence by incorporating the element's
     /// index on each element of the source. Merges the resulting
     /// observable sequences back into one observable sequence.
-    let flatMapi = Transformation.flatMapi
+    let inline flatMapi (mapper:'a*int -> IAsyncObservable<'b>) (source: IAsyncObservable<'a>) : IAsyncObservable<'b> =
+        Transformation.flatMapi mapper source
 
     /// Asynchronously projects each element of an observable sequence
     /// into an observable sequence by incorporating the element's
     /// index on each element of the source. Merges the resulting
     /// observable sequences back into one observable sequence.
-    let flatMapiAsync = Transformation.flatMapiAsync
+    let inline flatMapiAsync  (mapperAsync:'a*int -> Async<IAsyncObservable<'b>>) (source: IAsyncObservable<'a>) : IAsyncObservable<'b> =
+        Transformation.flatMapiAsync mapperAsync source
 
     /// Transforms the items emitted by an source sequence into
     /// observable streams, and mirror those items emitted by the
     /// most-recently transformed observable sequence.
-    let flatMapLatest = Transformation.flatMapLatest
+    let flatMapLatest (mapper: 'a -> IAsyncObservable<'b>) (source: IAsyncObservable<'a>) : IAsyncObservable<'b> =
+        Transformation.flatMapLatest mapper source
 
     /// Asynchronosly transforms the items emitted by an source sequence
     /// into observable streams, and mirror those items emitted by the
     /// most-recently transformed observable sequence.
-    let flatMapLatestAsync = Transformation.flatMapLatestAsync
+    let inline flatMapLatestAsync (mapperAsync: 'a -> Async<IAsyncObservable<'b>>) (source: IAsyncObservable<'a>) : IAsyncObservable<'b> =
+        Transformation.flatMapLatestAsync mapperAsync source
 
     /// Returns an observable sequence whose elements are the result of
     /// invoking the mapper function on each element of the source.
-    let map = Transformation.map
+    let inline map (mapper:'a -> 'b) (source: IAsyncObservable<'a>) : IAsyncObservable<'b> =
+        Transformation.map mapper source
 
     /// Returns an observable sequence whose elements are the result of
     /// invoking the async mapper function on each element of the source.
-    let mapAsync = Transformation.mapAsync
+    let inline mapAsync (mapperAsync: 'a -> Async<'b>) (source: IAsyncObservable<'a>) : IAsyncObservable<'b> =
+        Transformation.mapAsync mapperAsync source
 
     /// Returns an observable sequence whose elements are the result of
     /// invoking the mapper function and incorporating the element's
     /// index on each element of the source.
-    let mapi = Transformation.mapi
+    let inline mapi (mapper:'a*int -> 'b) (source: IAsyncObservable<'a>) : IAsyncObservable<'b> =
+        Transformation.mapi mapper source
 
     /// Returns an observable sequence whose elements are the result of
     /// invoking the async mapper function by incorporating the element's
     /// index on each element of the source.
-    let mapiAsync = Transformation.mapiAsync
+    let inline mapiAsync (mapper:'a*int -> Async<'b>) (source: IAsyncObservable<'a>) : IAsyncObservable<'b> =
+        Transformation.mapiAsync mapper source
 
     /// Transforms an observable sequence of observable sequences into
     /// an observable sequence producing values only from the most
     /// recent observable sequence.
-    let switchLatest = Transformation.switchLatest
+    let inline switchLatest (source: IAsyncObservable<IAsyncObservable<'a>>) : IAsyncObservable<'a> =
+        Transformation.switchLatest source

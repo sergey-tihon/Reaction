@@ -27,7 +27,6 @@ module Timeshift =
 
                     return! messageLoop state
                 }
-
                 messageLoop (0, 0)
             )
 

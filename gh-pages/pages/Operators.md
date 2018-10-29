@@ -111,7 +111,23 @@ let xs = fail error
 
 Functions for transforming (`IAsyncObservable<'a> -> IAsyncObservable<'b>`) an async observable.
 
-- **map** : ('a -> 'b) -> IAsyncObservable<'a> -> IAsyncObservable<'b>
+## map
+
+Returns an observable sequence whose elements are the result of
+invoking the mapper function on each element of the source.
+
+```fs
+val map : mapper: ('a -> 'b) -> source: IAsyncObservable<'a> -> IAsyncObservable<'b>
+```
+
+**Example:**
+
+```fs
+let mapper x = x * 10
+
+let xs = single 42 |> map mapper
+```
+
 - **mapi** : ('a*int -> 'b) -> IAsyncObservable<'a> -> IAsyncObservable<'b>
 - **mapAsync** : ('a -> Async<'b>) -> IAsyncObservable<'a> -> IAsyncObservable<'b>
 - **mapiAsync** : ('a*int -> Async<'b>) -> IAsyncObservable<'a> -> IAsyncObservable<'b>
@@ -225,6 +241,14 @@ Functions for time-shifting (`IAsyncObservable<'a> -> IAsyncObservable<'a>`) an 
 
 - **delay** : int -> IAsyncObservable<'a> -> IAsyncObservable<'a>
 - **debounce** : int -> IAsyncObservable<'a> -> IAsyncObservable<'a>
+
+### sample
+
+Samples the observable sequence at each interval.
+
+```fs
+val sample : msecs: int source: IAsyncObservable<'a> -> IAsyncObservable<'a>
+```
 
 ## Leaving
 

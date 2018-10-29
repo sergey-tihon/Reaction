@@ -12,7 +12,7 @@ module Transformation =
                 let _obv =
                     { new IAsyncObserver<'a> with
                         member this.OnNextAsync x = async {
-                            let! b =  mapperAsync x
+                            let! b = mapperAsync x
                             do! aobv.OnNextAsync b
                         }
                         member this.OnErrorAsync err = async {

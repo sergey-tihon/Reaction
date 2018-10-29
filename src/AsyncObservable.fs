@@ -28,6 +28,10 @@ module AsyncObservable =
             return disposable
         }
 
+    /// Returns an observable sequence that contains the elements of
+    /// the given sequences.
+    let inline (++) source other = Combine.concat [source; other]
+
     // Aggregate
 
     /// Groups the elements of an observable sequence according to a
@@ -196,6 +200,10 @@ module AsyncObservable =
     let inline delay (msecs: int) (source: IAsyncObservable<_>) : IAsyncObservable<'a> =
         Timeshift.delay msecs source
 
+    /// Samples the observable sequence at each interval.
+    let inline sample (msecs: int) (source: IAsyncObservable<'a>) : IAsyncObservable<'a> =
+        Timeshift.sample msecs source
+
     // Transform
 
     /// Returns an observable sequence containing the first sequence's
@@ -233,7 +241,7 @@ module AsyncObservable =
     /// Transforms the items emitted by an source sequence into
     /// observable streams, and mirror those items emitted by the
     /// most-recently transformed observable sequence.
-    let flatMapLatest (mapper: 'a -> IAsyncObservable<'b>) (source: IAsyncObservable<'a>) : IAsyncObservable<'b> =
+    let inline flatMapLatest (mapper: 'a -> IAsyncObservable<'b>) (source: IAsyncObservable<'a>) : IAsyncObservable<'b> =
         Transformation.flatMapLatest mapper source
 
     /// Asynchronosly transforms the items emitted by an source sequence

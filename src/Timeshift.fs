@@ -101,3 +101,12 @@ module Timeshift =
                 return AsyncDisposable.Create cancel
             }
         { new IAsyncObservable<'a> with member __.SubscribeAsync o = subscribeAsync o }
+
+    /// Samples the observable sequence at each interval.
+    let sample msecs (source: IAsyncObservable<'a>) : IAsyncObservable<'a> =
+        let timer = Create.interval msecs msecs
+
+        if msecs > 0 then
+            Combine.withLatestFrom source timer |> Transformation.map (fun (_, source) -> source)
+        else
+            source

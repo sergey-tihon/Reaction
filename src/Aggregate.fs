@@ -4,7 +4,7 @@ open System.Threading
 open Reaction.Core
 
 [<RequireQualifiedAccess>]
-module Aggregatation =
+module Aggregation =
     /// Applies an async accumulator function over an observable
     /// sequence and returns each intermediate result. The seed value is
     /// used as the initial accumulator value. Returns an observable

@@ -38,21 +38,21 @@ module AsyncObservable =
     /// specified key mapper function. Returns a sequence of observable
     /// groups, each of which corresponds to a given key.
     let inline groupBy (keyMapper: 'a -> 'g) (source: IAsyncObservable<'a>) : IAsyncObservable<IAsyncObservable<'a>> =
-        Aggregatation.groupBy keyMapper source
+        Aggregation.groupBy keyMapper source
 
     /// Applies an accumulator function over an observable sequence and
     /// returns each intermediate result. The seed value is used as the
     /// initial accumulator value. Returns an observable sequence
     /// containing the accumulated values.
     let inline scan (initial: 's) (accumulator: 's -> 'a -> 's) (source: IAsyncObservable<'a>) : IAsyncObservable<'s> =
-        Aggregatation.scan initial accumulator source
+        Aggregation.scan initial accumulator source
 
     /// Applies an async accumulator function over an observable
     /// sequence and returns each intermediate result. The seed value is
     /// used as the initial accumulator value. Returns an observable
     /// sequence containing the accumulated values.
     let inline scanAsync (initial: 's) (accumulator: 's -> 'a -> Async<'s>) (source: IAsyncObservable<'a>) : IAsyncObservable<'s> =
-        Aggregatation.scanAsync initial accumulator source
+        Aggregation.scanAsync initial accumulator source
 
     // Combine
 

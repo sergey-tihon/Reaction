@@ -10,7 +10,7 @@ Reaction is a library for asynchronous reactive programming, and is an implement
 - Combine
 - Time-shift
 
-Reaction was designed spesifically for targeting [Fable](http://fable.io/) which means that the code may be [transpiled](https://en.wikipedia.org/wiki/Source-to-source_compiler) to JavaScript, and thus the same F# code may be used both client and server side for full stack software development.
+Reaction was designed specifically for targeting [Fable](http://fable.io/) which means that the code may be [transpiled](https://en.wikipedia.org/wiki/Source-to-source_compiler) to JavaScript, and thus the same F# code may be used both client and server side for full stack software development.
 
 See [Fable Reaction](https://github.com/dbrattli/Fable.Reaction) for use of Reaction with Elmish and the model view update (MVU) style architecture.
 
